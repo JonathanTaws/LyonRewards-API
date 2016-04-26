@@ -25,7 +25,7 @@ SECRET_KEY = 'zhocb4l*rfiepnq1sj1#==1&_t)&n02j2+nrz=-k^69d8(if6u'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'lyonrewards.antoine-chabert.fr/api/']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'lyonrewards.antoine-chabert.fr/api/', 'lyonrewards.ancha.fr/api/']
 
 
 # Application definition
@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'lyonRewards.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-DATABASE_PASSWORD = Sei9Bai1thiv1ahp
+DATABASE_PASSWORD = 'Sei9Bai1thiv1ahp'
 
 DATABASES = {
     'default': {

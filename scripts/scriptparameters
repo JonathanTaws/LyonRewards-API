@@ -1,0 +1,9 @@
+#This file is included in project bash scripts to define common parameters
+#You can modify it.
+
+SOURCEDIR=lyonRewards
+SCRIPTDIR=scripts
+SCRIPTDEBUG=false
+PROJECTROOTDIR=/var/www/lyonrewards-api
+USER=lyonrewards
+GROUP=lyonrewards
