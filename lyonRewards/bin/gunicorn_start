@@ -1,0 +1,23 @@
+#!/bin/bash
+NAME="lyonRewards"                                  # Nom de l'application
+DJANGODIR=/var/www/lyonrewards-api/lyonRewards            # Django project directory
+USER=lyonrewards                                        # le nom d'utilisateur
+NUM_WORKERS=3                                     # garder le nombre de workers comme ca
+
+echo "Start $NAME en tant que `whoami`"
+
+# On active l'environnement virtuel
+source /home/lyonrewards/.virtualenvs/virtualLyonRewards/bin/activate
+
+echo "environnement active"
+#on active les variables d'environnement, présentes dans le .profile du home de webuser
+#source /home/lyonrewards/.profile
+
+
+# lance Django Unicorn
+cd $DJANGODIR
+exec gunicorn lyonRewards.wsgi \
+  --name $NAME \
+  --workers $NUM_WORKERS \
+  --user=$USER \
+
