@@ -77,9 +77,22 @@ class UserCitizenAct(models.Model):
         return "UserCitizenAct {0}".format(self.date)
 
 
+class Partner(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    adress = models.TextField()
+
+    def __str__(self):
+        return "{0}".format(self.name)
+
+    def __unicode__(self):
+        return "{0}".format(self.name)
+
+
 class PartnerOffer(models.Model):
     description = models.TextField()
     points = models.PositiveIntegerField()
+    partner = models.ForeignKey(Partner)
 
     def __str__(self):
         return "{0}".format(self.description)
@@ -100,19 +113,3 @@ class UserPartnerOffer(models.Model):
         return "UserPartnerOffer {0}".format(self.date)
 
 
-class Partner(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    adress = models.TextField()
-
-    def __str__(self):
-        return "{0}".format(self.name)
-
-    def __unicode__(self):
-        return "{0}".format(self.name)
-
-    def __str__(self):
-        return "{0}".format(self.description)
-
-    def __unicode__(self):
-        return "{0}".format(self.description)
