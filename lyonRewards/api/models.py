@@ -52,7 +52,7 @@ class CitizenAct(models.Model):
 
 
 class TreasureHunt(models.Model):
-    event = models.ForeignKey(Event)
+    event = models.OneToOneField(Event)
 
     def __str__(self):
         return "TreasureHunt {0}".format(self.description)
