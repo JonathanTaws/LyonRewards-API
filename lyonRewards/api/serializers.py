@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from api.models import Event, Tag
+from api.models import Event, Tag, Profile
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,3 +10,9 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = '__all__'
+	depth = 2
