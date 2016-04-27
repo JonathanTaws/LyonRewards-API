@@ -28,7 +28,7 @@ class Event(models.Model):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User)  # La liaison OneToOne vers le modèle User
+    user = models.OneToOneField(User)  # One-to-One liaison
     globalPoints = models.PositiveIntegerField()
     currentPoints = models.PositiveIntegerField()
 
