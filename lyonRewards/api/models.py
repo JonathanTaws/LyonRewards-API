@@ -3,7 +3,29 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 
-#TODO Citizen act transport
+
+# TODO Citizen act transport
+class Tag(models.Model):
+    title = models.CharField(max_length=100)
+
+    def __str__(self):
+        return "{0}".format(self.title)
+
+    def __unicode__(self):
+        return "{0}".format(self.title)
+
+
+class Event(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    publishDate = models.DateTimeField(default=now, verbose_name="Date of publication")
+    start_date = models.DateTimeField(default=now, verbose_name="Start of the event")
+    end_date = models.DateTimeField(default=now, verbose_name="End of the event")
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    tags = models.ManyToManyField('Tag')
+
 
 class Profile(models.Model):
     user = models.OneToOneField(User)  # La liaison OneToOne vers le modèle User
@@ -27,6 +49,16 @@ class CitizenAct(models.Model):
 
     def __unicode__(self):
         return "{0}".format(self.title)
+
+
+class TreasureHunt(models.Model):
+    event = models.ForeignKey(Event)
+
+    def __str__(self):
+        return "TreasureHunt {0}".format(self.description)
+
+    def __unicode__(self):
+        return "TreasureHunt {0}".format(self.description)
 
 
 class CitizenActQRCode(CitizenAct):
@@ -79,40 +111,8 @@ class Partner(models.Model):
     def __unicode__(self):
         return "{0}".format(self.name)
 
-
-class Event(models.Model):
-    title = models.CharField(max_length=100)
-    description = models.TextField()
-    publishDate = models.DateTimeField(default=now, verbose_name="Date of publication")
-    start_date = models.DateTimeField(default=now, verbose_name="Start of the event")
-    end_date = models.DateTimeField(default=now, verbose_name="End of the event")
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-
-    tags = models.ManyToManyField('Tag')
-
     def __str__(self):
         return "{0}".format(self.description)
 
     def __unicode__(self):
         return "{0}".format(self.description)
-
-
-class Tag(models.Model):
-    title = models.CharField(max_length=100)
-
-    def __str__(self):
-        return "{0}".format(self.title)
-
-    def __unicode__(self):
-        return "{0}".format(self.title)
-
-
-class TreasureHunt(models.Model):
-    event = models.ForeignKey(Event)
-
-    def __str__(self):
-        return "TreasureHunt {0}".format(self.description)
-
-    def __unicode__(self):
-        return "TreasureHunt {0}".format(self.description)
