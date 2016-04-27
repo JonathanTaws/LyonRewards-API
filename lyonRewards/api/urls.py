@@ -7,6 +7,8 @@ router = DefaultRouter()
 router.register(r'tags', views.TagViewSet)
 router.register(r'events', views.EventViewSet)
 router.register(r'users', views.ProfileViewSet)
+router.register(r'partner', views.PartnerViewSet)
+router.register(r'offers', views.PartnerOfferViewSet)
 
 # The API URLs are now determined automatically by the router.
 # Additionally, we include the login URLs for the browsable API.
