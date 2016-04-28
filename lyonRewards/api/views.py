@@ -118,7 +118,7 @@ def debit(request, userId, offerId):
 
 
 @api_view(['POST'])
-def debit(request, userId, actId):
+def credit(request, userId, actId):
     '''
     Create an userCitizenAct and credit the user acount
     '''
