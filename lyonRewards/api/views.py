@@ -27,6 +27,12 @@ class PartnerViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerSerializer
     queryset = Partner.objects.all()
 
+    @detail_route(methods=['get'])
+    def offers(self, request, *args, **kwargs):
+        offers_list = self.get_object().partneroffer_set.all()
+        serializer = PartnerOfferSerializer(offers_list, many=True)
+        return Response(serializer.data)
+
 
 
 
