@@ -1,16 +1,17 @@
+from datetime import datetime
+import json
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
-from django.utils.six import BytesIO
-from rest_framework import viewsets, status, mixins, generics
-from rest_framework.parsers import JSONParser
-from rest_framework.decorators import detail_route
+
+from django.shortcuts import render, get_object_or_404
+from rest_framework import viewsets, status, mixins
+from rest_framework.decorators import detail_route, api_view
 from rest_framework.response import Response
 
-from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt
+from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt, \
+    UserPartnerOffer, UserCitizenAct
 from api.serializers import (
     TagSerializer, EventSerializer, ProfileSerializer, PartnerOfferSerializer, PartnerSerializer,
     CitizenActSerializer, CitizenActQRCodeSerializer)
-
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -29,10 +30,10 @@ class EventViewSet(mixins.CreateModelMixin,
     def list(self, request):
         events = Event.objects.all()
         serializer = EventSerializer(events, many=True)
-        for s_event in serializer.data:
-            print(s_event['id'])
-            print(Event.objects.get(id=s_event['id']))
-            s_event['progress'] = Event.objects.get(id=s_event['id']).progress(request.query_params['userid'])
+        if 'userId' in request.query_params:
+            for s_event in serializer.data:
+                s_event['progress'] = Event.objects.get(id=s_event['id']).progress(request.query_params['userId'])
+                print(s_event['progress'])
         return Response(serializer.data)
 
 
@@ -44,7 +45,7 @@ class EventViewSet(mixins.CreateModelMixin,
 
     @detail_route(methods=['get'])
     def qrcodes(self, request, *args, **kwargs):
-        citizenActQRCode = CitizenActQRCode.objects.filter(treasure_hunt__event = self.get_object())
+        citizenActQRCode = CitizenActQRCode.objects.filter(treasure_hunt__event=self.get_object())
         serializer = CitizenActQRCodeSerializer(citizenActQRCode, many=True)
         return Response(serializer.data)
 
@@ -53,9 +54,41 @@ class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
+
 class PartnerOfferViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerOfferSerializer
     queryset = PartnerOffer.objects.all()
+
+    # we define a custom get in order to return a representation wich is flatten
+    def retrieve(self, request, pk=None):
+        # we find the corresponding partner_offer
+        partner_offer = get_object_or_404(PartnerOffer.objects.all(), pk=pk)
+
+        # we find the corresponding partner
+        partner = get_object_or_404(Partner.objects.all(), pk=partner_offer.partner.pk)
+
+        # we serialize the partner and include it into the representation of partner_offer
+        serializer_partner = PartnerSerializer(partner)
+        serializer_offer = PartnerOfferSerializer(partner_offer)
+
+        #mixing the two dico
+        data_offer = dict(serializer_offer.data)
+        data_partner = dict(serializer_partner.data)
+
+        data_offer['partner'] = data_partner
+
+        return Response(data_offer)
+
+    def list(self, request):
+        partner_offers = PartnerOffer.objects.all()
+        list_return = []
+
+        for offer in partner_offers:
+            resp = self.retrieve(request, offer.pk)
+            list_return.append(resp.data)
+
+        return Response(list_return)
+
 
 class PartnerViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerSerializer
@@ -63,22 +96,22 @@ class PartnerViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['get'])
     def offers(self, request, *args, **kwargs):
-        #TODO : add exception in case id doesn't exist
+        # TODO : add exception in case id doesn't exist
         offers_list = self.get_object().partneroffer_set.all()
         serializer = PartnerOfferSerializer(offers_list, many=True)
         return Response(serializer.data)
 
-class CitizenActViewSet(mixins.ListModelMixin,
-                            mixins.RetrieveModelMixin,
-                            mixins.DestroyModelMixin,
-                            viewsets.GenericViewSet):
 
+class CitizenActViewSet(mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin,
+                        viewsets.GenericViewSet):
     serializer_class = CitizenActSerializer
     queryset = CitizenAct.objects.all()
 
     def create(self, request):
         type = request.query_params.get('type')
-        if type == 'qrcode' :
+        if type == 'qrcode':
             serializer = CitizenActQRCodeSerializer(data=request.data)
             if serializer.is_valid():
                 citizenActQRCode = CitizenActQRCode(**serializer.validated_data)
@@ -101,7 +134,54 @@ class CitizenActViewSet(mixins.ListModelMixin,
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(['POST'])
+def debit(request, userId, offerId):
+    '''
+    Create an UserPartnerOffer and debit the user acount
+    '''
+    try:
+        profile = Profile.objects.get(id=userId)
+    except:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    try:
+        offer = PartnerOffer.objects.get(id=offerId)
+    except:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    # we save it in database
+    user_partner_offer = UserPartnerOffer(profile=profile, partner_offer=offer, date=datetime.now())
+    user_partner_offer.save()
+
+    # we deduce the corresponding amount of money from the user
+    if profile.current_points > offer.points:
+        profile.current_points -= offer.points
+        profile.save()
+
+        # we return the new user if we deduced the correct amount of points
+        return Response(ProfileSerializer(profile).data)
+
+    return Response(status=status.HTTP_403_FORBIDDEN)
 
 
+@api_view(['POST'])
+def credit(request, userId, actId):
+    '''
+    Create an userCitizenAct and credit the user acount
+    '''
+    try:
+        profile = Profile.objects.get(id=userId)
+    except:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    try:
+        act = CitizenAct.objects.get(id=actId)
+    except:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
+    user_citizen_act = UserCitizenAct(profile=profile, citizen_act=act, date=datetime.now())
+    user_citizen_act.save()
 
+    # we add the point to the user acount
+    profile.global_points += act.points
+    profile.current_points += act.points
+
+    return Response(ProfileSerializer(profile).data)

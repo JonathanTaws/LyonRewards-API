@@ -17,12 +17,13 @@ class Tag(models.Model):
 
 class Event(models.Model):
     title = models.CharField(max_length=100)
-    description = models.TextField()
-    publishDate = models.DateTimeField(default=now, verbose_name="Date of publication")
+    description = models.TextField(max_length=100)
+    publish_date = models.DateTimeField(default=now, verbose_name="Date of publication")
     start_date = models.DateTimeField(default=now, verbose_name="Start of the event")
     end_date = models.DateTimeField(default=now, verbose_name="End of the event")
     latitude = models.FloatField()
     longitude = models.FloatField()
+    image_url = models.CharField(max_length=100)
     tags = models.ManyToManyField('Tag')
 
     def progress(self, profile):
@@ -30,13 +31,13 @@ class Event(models.Model):
             CitizenActQRCode.objects.
             filter(treasure_hunt__event = self).
             filter(usercitizenact__profile = profile).
-            count())/CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()
+            count()/float(CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()))
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User)  # One-to-One liaison, no inheritance
-    globalPoints = models.PositiveIntegerField()
-    currentPoints = models.PositiveIntegerField()
+    user = models.OneToOneField(User, on_delete=models.CASCADE)  # One-to-One liaison, no inheritance
+    global_points = models.PositiveIntegerField()
+    current_points = models.PositiveIntegerField()
 
     def __str__(self):
         return "Profil de {0}".format(self.user.username)
@@ -92,7 +93,8 @@ class UserCitizenAct(models.Model):
 class Partner(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    adress = models.TextField()
+    address = models.TextField()
+    image_url = models.CharField(max_length=100)
 
     def __str__(self):
         return "{0}".format(self.name)
@@ -103,6 +105,7 @@ class Partner(models.Model):
 
 class PartnerOffer(models.Model):
     description = models.TextField()
+    title = models.CharField(max_length=100)
     points = models.PositiveIntegerField()
     partner = models.ForeignKey(Partner)
 
