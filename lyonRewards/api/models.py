@@ -18,19 +18,19 @@ class Tag(models.Model):
 class Event(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField()
-    publishDate = models.DateTimeField(default=now, verbose_name="Date of publication")
+    publish_date = models.DateTimeField(default=now, verbose_name="Date of publication")
     start_date = models.DateTimeField(default=now, verbose_name="Start of the event")
     end_date = models.DateTimeField(default=now, verbose_name="End of the event")
     latitude = models.FloatField()
     longitude = models.FloatField()
-
+    image_url = models.URLField()
     tags = models.ManyToManyField('Tag')
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User)  # One-to-One liaison, no inheritance
-    globalPoints = models.PositiveIntegerField()
-    currentPoints = models.PositiveIntegerField()
+    user = models.OneToOneField(User, on_delete=models.CASCADE)  # One-to-One liaison, no inheritance
+    global_points = models.PositiveIntegerField()
+    current_points = models.PositiveIntegerField()
 
     def __str__(self):
         return "Profil de {0}".format(self.user.username)
@@ -81,6 +81,7 @@ class Partner(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     adress = models.TextField()
+    image_url = models.URLField()
 
     def __str__(self):
         return "{0}".format(self.name)

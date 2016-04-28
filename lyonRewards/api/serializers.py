@@ -15,20 +15,18 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        # fields = "__all__"
-        fields = ("id", "username", "password", "first_name", "last_name", "email")
-
-
 class ProfileSerializer(serializers.ModelSerializer):
     # we use the userSerialiser in order to create a user at the same time we create a Profile
-    user = UserSerializer()
+    id = serializers.IntegerField(source='pk', read_only=True)
+    username = serializers.CharField(source='user.username')
+    email = serializers.EmailField(source='user.email')
+    password = serializers.CharField(source='user.password')
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
 
     class Meta:
         model = Profile
-        fields = ('id', 'user', 'globalPoints', 'currentPoints')
+        fields = ('id', 'username', 'password', 'first_name', 'last_name', 'email', 'global_points', 'current_points')
 
     def create(self, validated_data):
         # we define what the serializer must do when creating a profile
@@ -44,20 +42,18 @@ class ProfileSerializer(serializers.ModelSerializer):
         return profile
 
     def update(self, instance, validated_data):
-        # we define how to update our profile : not the best, we'd like to use **kwargs
+        # we define how to update our profile
 
         user_data = validated_data.pop('user')
 
-        instance.user.set_password(user_data['password'])
         instance.user.username = user_data['username']
+        instance.user.set_password(user_data['password'])
         instance.user.first_name = user_data['first_name']
         instance.user.last_name = user_data['last_name']
         instance.user.email = user_data['email']
         instance.user.save()
 
-        instance.globalPoints = validated_data['globalPoints']
-        instance.currentPoints = validated_data['currentPoints']
-        instance.save()
+        super(ProfileSerializer, self).update(instance, validated_data)
 
         return instance
 
