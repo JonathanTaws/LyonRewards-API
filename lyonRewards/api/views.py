@@ -12,7 +12,6 @@ from api.serializers import (
     CitizenActSerializer, CitizenActQRCodeSerializer)
 
 
-
 class TagViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
@@ -30,7 +29,7 @@ class EventViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['get'])
     def qrcodes(self, request, *args, **kwargs):
-        citizenActQRCode = CitizenActQRCode.objects.filter(treasure_hunt__event = self.get_object())
+        citizenActQRCode = CitizenActQRCode.objects.filter(treasure_hunt__event=self.get_object())
         serializer = CitizenActQRCodeSerializer(citizenActQRCode, many=True)
         return Response(serializer.data)
 
@@ -51,22 +50,22 @@ class PartnerViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['get'])
     def offers(self, request, *args, **kwargs):
-        #TODO : add exception in case id doesn't exist
+        # TODO : add exception in case id doesn't exist
         offers_list = self.get_object().partneroffer_set.all()
         serializer = PartnerOfferSerializer(offers_list, many=True)
         return Response(serializer.data)
 
-class CitizenActViewSet(mixins.ListModelMixin,
-                            mixins.RetrieveModelMixin,
-                            mixins.DestroyModelMixin,
-                            viewsets.GenericViewSet):
 
+class CitizenActViewSet(mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin,
+                        viewsets.GenericViewSet):
     serializer_class = CitizenActSerializer
     queryset = CitizenAct.objects.all()
 
     def create(self, request):
         type = request.query_params.get('type')
-        if type == 'qrcode' :
+        if type == 'qrcode':
             serializer = CitizenActQRCodeSerializer(data=request.data)
             if serializer.is_valid():
                 citizenActQRCode = CitizenActQRCode(**serializer.validated_data)
@@ -87,7 +86,6 @@ class CitizenActViewSet(mixins.ListModelMixin,
             return Response(serializer.data, status=status.HTTP_200_OK)
         except(ObjectDoesNotExist):
             return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 
 @api_view(['POST'])
@@ -117,3 +115,19 @@ def debit(request, userId, offerId):
         return Response(ProfileSerializer(profile).data)
 
     return Response(status=status.HTTP_403_FORBIDDEN)
+
+
+@api_view(['POST'])
+def debit(request, userId, actId):
+    '''
+    Create an userCitizenAct and credit the user acount
+    '''
+    try:
+        profile = Profile.objects.get(id=userId)
+    except:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    try:
+        act = PartnerOffer.objects.get(id=actId)
+    except:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+

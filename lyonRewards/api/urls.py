@@ -19,6 +19,8 @@ router.register(r'acts', views.CitizenActViewSet)
 urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^users/(?P<userId>[0-9]+)/offers/(?P<offerId>[0-9]+)/debit', api.views.debit),
+    url(r'^users/(?P<userId>[0-9]+)/acts/(?P<actId>[0-9]+)/credit', api.views.credit),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^login/', view_authtoken.obtain_auth_token)
 ]
+

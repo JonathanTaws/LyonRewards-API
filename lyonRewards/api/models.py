@@ -98,6 +98,7 @@ class Partner(models.Model):
 
 class PartnerOffer(models.Model):
     description = models.TextField()
+    title = models.CharField()
     points = models.PositiveIntegerField()
     partner = models.ForeignKey(Partner)
 
