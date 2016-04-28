@@ -28,6 +28,13 @@ class EventViewSet(viewsets.ModelViewSet):
         treasure_hunt.save()
         return Response(status=status.HTTP_201_CREATED)
 
+    @detail_route(methods=['get'])
+    def qrcodes(self, request, *args, **kwargs):
+        citizenActQRCode = CitizenActQRCode.objects.filter(treasure_hunt__event = self.get_object())
+        serializer = CitizenActQRCodeSerializer(citizenActQRCode, many=True)
+        return Response(serializer.data)
+
+
 class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
