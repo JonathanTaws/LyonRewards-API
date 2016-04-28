@@ -23,7 +23,7 @@ class Event(models.Model):
     end_date = models.DateTimeField(default=now, verbose_name="End of the event")
     latitude = models.FloatField()
     longitude = models.FloatField()
-    image_url = models.URLField()
+    image_url = models.CharField(max_length=100)
     tags = models.ManyToManyField('Tag')
 
 
@@ -87,7 +87,7 @@ class Partner(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     adress = models.TextField()
-    image_url = models.URLField()
+    image_url = models.CharField(max_length=100)
 
     def __str__(self):
         return "{0}".format(self.name)
