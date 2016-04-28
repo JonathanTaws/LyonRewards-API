@@ -35,9 +35,17 @@ def dist(gps1, gps2):
 	dlon = radians(gps2["lon"] - gps1["lon"])
 	dlat = radians(gps2["lat"] - gps1["lat"])
 	a = (sin(dlat/2))**2 + cos(radians(gps1["lat"])) * cos(radians(gps2["lat"])) * (sin(dlon/2))**2 
-	c = 2 * asin(sqrt(a))
-	d = 6372.8 * c
+	c = 2 * atan2(sqrt(a), sqrt(1-a))
+	d = 6372.8 * 1000 * c
 	return d
+
+#Great circle magic bearing formulas
+def angle_to_north(gps1, gps2):
+    dlon = radians(gps2["lon"] - gps1["lon"])
+    y = sin(dlon) * cos(radians(gps2["lat"]))
+    x = cos(radians(gps1["lat"])) * sin(radians(gps2["lat"])) - sin(radians(gps1["lat"]))*cos(radians(gps2["lat"]))*cos(dlon)
+    brng = (degrees(atan2(y,x)) + 360) % 360
+    return brng
 
 def analyse_data():
 	print "Data read successfully !"
@@ -45,25 +53,51 @@ def analyse_data():
 	print "Number of labelled parts : ", meta_counter
 	print ("-"*60)
 	for log in log_list:
+		if(len(log["gps"]) < 3):
+			continue
+
 		#Compute features and feed vectors
+		#print "Log ", len(X)+1, " : ", len(log["gps"]), "GPS points and mode = ", log["mode"]
+
 		#1st feature : average speed
+		speeds = [0] * len(log["gps"])
 		speed_sum = 0.0
 		for index in range(1, len(log["gps"])):
-			speed_sum += dist(log["gps"][index], log["gps"][index-1])
-		avg_speed = speed_sum/(len(log["gps"])-1)
+			speeds[index] = dist(log["gps"][index], log["gps"][index-1])/ \
+							((log["gps"][index]["timestamp"] - log["gps"][index-1]["timestamp"]).total_seconds())
+			speed_sum += speeds[index]
+		avg_speed = 3.6 * speed_sum / (len(log["gps"])-1)
+		#print "--- avg speed is ", avg_speed, " km/h"
 
-		X.append([avg_speed])
+		#2nd feature : average acceleration
+		accel_sum = 0.0
+		for index in range(2, len(log["gps"])):
+			accel_sum += (speeds[index] - speeds[index-1]) / \
+						 ((log["gps"][index]["timestamp"] - log["gps"][index-1]["timestamp"]).total_seconds())
+		avg_accel = accel_sum / (len(log["gps"])-2)
+		#print "--- avg accel is ", avg_accel
+
+		#3rd feature : average heading change
+		angle_sum = 0.0
+		for index in range(1, len(log["gps"])):
+			angle_sum += angle_to_north(log["gps"][index], log["gps"][index-1])
+		avg_angle = angle_sum / (len(log["gps"])-1)
+		#print "--- avg degree change is ", avg_angle
+
+		X.append([avg_speed, avg_accel, avg_angle])
 		Y.append(TRANSPORT[log["mode"]])
 
-	Xtrain = X[:len(X)/2]
+	print ("-"*60)
+	Xtrain = X[len(X)/2:]
 	Ytrain = Y[len(Y)/2:]
 	Xtest = X[:len(X)/2]
-	Ytest = Y[len(Y)/2:]
+	Ytest = Y[:len(Y)/2]
 	forest = RandomForestClassifier(n_estimators = 100)
 	forest.fit(Xtrain,Ytrain)
 	Yresult = forest.predict(Xtest)
 	counter = 0
 	for index in range(0, len(Yresult)):
+		#print Yresult[index], " --- VS --- ", Ytest[index]
 		if(Yresult[index] == Ytest[index]):
 			counter = counter + 1
 	print "Done training the forest !"
