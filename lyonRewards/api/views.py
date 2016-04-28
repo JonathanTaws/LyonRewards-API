@@ -6,7 +6,7 @@ from rest_framework.decorators import detail_route, api_view
 from rest_framework.response import Response
 
 from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt, \
-    UserPartnerOffer
+    UserPartnerOffer, UserCitizenAct
 from api.serializers import (
     TagSerializer, EventSerializer, ProfileSerializer, PartnerOfferSerializer, PartnerSerializer,
     CitizenActSerializer, CitizenActQRCodeSerializer)
@@ -130,4 +130,14 @@ def debit(request, userId, actId):
         act = PartnerOffer.objects.get(id=actId)
     except:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    user_citizen_act = UserCitizenAct(profile=profile, citizen_act=act, date=datetime.now())
+    user_citizen_act.save()
+
+    #we add the point to the user acount
+    profile.global_points += act.points
+    profile.current_points += act.points
+
+    return Response(ProfileSerializer(profile).data)
+
 
