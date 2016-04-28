@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from api.models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer
-
+from api.models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, CitizenAct, CitizenActQRCode
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -74,3 +73,13 @@ class UserPartnerOfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPartnerOffer
         fields = "__all__"
+
+class CitizenActSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CitizenAct
+        fields = '__all__'
+
+class CitizenActQRCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CitizenActQRCode
+        fields = '__all__'
