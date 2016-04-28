@@ -62,9 +62,6 @@ class PartnerOfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartnerOffer
         fields = '__all__'
-        depth = 1
-
-
 
 
 class PartnerSerializer(serializers.ModelSerializer):

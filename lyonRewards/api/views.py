@@ -1,6 +1,8 @@
 import datetime
+import json
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
+
+from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import detail_route, api_view
 from rest_framework.response import Response
@@ -42,6 +44,26 @@ class ProfileViewSet(viewsets.ModelViewSet):
 class PartnerOfferViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerOfferSerializer
     queryset = PartnerOffer.objects.all()
+
+    # we define a custom get in order to return a representation wich is flatten
+    def retrieve(self, request, pk=None):
+        # we find the corresponding partner_offer
+        partner_offer = get_object_or_404(PartnerOffer.objects.all(), pk=pk)
+
+        # we find the corresponding partner
+        partner = get_object_or_404(Partner.objects.all(), pk=partner_offer.partner.pk)
+
+        # we serialize the partner and include it into the representation of partner_offer
+        serializer_partner = PartnerSerializer(partner)
+        serializer_offer = PartnerOfferSerializer(partner_offer)
+
+        #mixing the two dico
+        data_offer = dict(serializer_offer.data)
+        data_partner = dict(serializer_partner.data)
+
+        data_offer['partner'] = data_partner
+
+        return Response(data_offer)
 
 
 class PartnerViewSet(viewsets.ModelViewSet):
@@ -134,10 +156,8 @@ def credit(request, userId, actId):
     user_citizen_act = UserCitizenAct(profile=profile, citizen_act=act, date=datetime.now())
     user_citizen_act.save()
 
-    #we add the point to the user acount
+    # we add the point to the user acount
     profile.global_points += act.points
     profile.current_points += act.points
 
     return Response(ProfileSerializer(profile).data)
-
-
