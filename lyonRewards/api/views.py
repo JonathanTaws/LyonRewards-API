@@ -65,6 +65,16 @@ class PartnerOfferViewSet(viewsets.ModelViewSet):
 
         return Response(data_offer)
 
+    def list(self, request):
+        partner_offers = PartnerOffer.objects.all()
+        list_return = []
+
+        for offer in partner_offers:
+            resp = self.retrieve(request, offer.pk)
+            list_return.append(resp.data)
+
+        return Response(list_return)
+
 
 class PartnerViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerSerializer
