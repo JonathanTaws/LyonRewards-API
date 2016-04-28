@@ -55,14 +55,20 @@ class TreasureHunt(models.Model):
     event = models.OneToOneField(Event)
 
     def __str__(self):
-        return "TreasureHunt {0}".format(self.description)
+        return "TreasureHunt {0}".format(self.id)
 
     def __unicode__(self):
-        return "TreasureHunt {0}".format(self.description)
+        return "TreasureHunt {0}".format(self.id)
 
 
 class CitizenActQRCode(CitizenAct):
     treasure_hunt = models.ForeignKey(TreasureHunt, blank=True)
+
+    def __str__(self):
+        return "CitizenActQRCode {0}".format(self.title)
+
+    def __unicode__(self):
+        return "CitizenActQRCode {0}".format(self.title)
 
 
 class UserCitizenAct(models.Model):
