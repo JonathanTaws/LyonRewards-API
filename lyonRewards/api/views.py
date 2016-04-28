@@ -18,9 +18,23 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
 
 
-class EventViewSet(viewsets.ModelViewSet):
+class EventViewSet(mixins.CreateModelMixin,
+                        mixins.UpdateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin,
+                        viewsets.GenericViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
+
+    def list(self, request):
+        events = Event.objects.all()
+        serializer = EventSerializer(events, many=True)
+        for s_event in serializer.data:
+            print(s_event['id'])
+            print(Event.objects.get(id=s_event['id']))
+            s_event['progress'] = Event.objects.get(id=s_event['id']).progress(request.query_params['userid'])
+        return Response(serializer.data)
+
 
     @detail_route(methods=['post'])
     def hunt(self, request, *args, **kwargs):

@@ -23,8 +23,14 @@ class Event(models.Model):
     end_date = models.DateTimeField(default=now, verbose_name="End of the event")
     latitude = models.FloatField()
     longitude = models.FloatField()
-
     tags = models.ManyToManyField('Tag')
+
+    def progress(self, profile):
+        return (
+            CitizenActQRCode.objects.
+            filter(treasure_hunt__event = self).
+            filter(usercitizenact__profile = profile).
+            count())/CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()
 
 
 class Profile(models.Model):
