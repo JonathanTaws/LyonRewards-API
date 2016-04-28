@@ -86,7 +86,7 @@ class UserCitizenAct(models.Model):
 class Partner(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    adress = models.TextField()
+    address = models.TextField()
     image_url = models.CharField(max_length=100)
 
     def __str__(self):
