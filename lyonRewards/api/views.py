@@ -32,17 +32,21 @@ class EventViewSet(mixins.CreateModelMixin,
         if 'type' in request.query_params:
             type=request.query_params.get('type')
             if type == 'past':
-                events = Event.objects.filter(end_date__date__lt=datetime.now())
+                events = Event.objects.filter(end_date__lt=datetime.now())
             elif type == 'ongoing':
-                events = Event.objects.filter(start_date__date__gte=datetime.now()).filter(end_date__date__lt = datetime.now())
+                events = Event.objects.filter(start_date__lt=datetime.now()).filter(end_date__gt=datetime.now())
             elif type == 'future':
-                events = Event.objects.filter(start_date__date__gt=datetime.now())
+                events = Event.objects.filter(start_date__gt=datetime.now())
             else:
                 return Response({}, status=status.HTTP_400_BAD_REQUEST)
         else:
             events = Event.objects.all()
         serializer = EventSerializer(events, many=True)
         if 'userId' in request.query_params:
+            if 'participatedOnly' in request.query_params:
+                if request.query_params.get('participatedOnly') == "true":
+                    events=events.filter(treasurehunt__citizenactqrcode__usercitizenact__profile__id  =  request.query_params['userId'])
+                    serializer = EventSerializer(events, many=True)
             for s_event in serializer.data:
                 s_event['progress'] = Event.objects.get(id=s_event['id']).progress(request.query_params['userId'])
         return Response(serializer.data, status=status.HTTP_200_OK)
