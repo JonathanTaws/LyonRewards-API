@@ -53,7 +53,8 @@ class EventViewSet(mixins.CreateModelMixin,
             show_progress = True
             if 'participatedOnly' in request.query_params:
                 if request.query_params.get('participatedOnly') == "true":
-                    events=events.filter(treasurehunt__citizenactqrcode__usercitizenact__profile__id  =  request.query_params['userId'])
+                    events=events.filter(treasurehunt__citizenactqrcode__usercitizenact__profile__id  =  request.query_params['userId']).distinct()
+
 
         #sorting is done after all others operation on events
         if 'sort' in request.query_params:
