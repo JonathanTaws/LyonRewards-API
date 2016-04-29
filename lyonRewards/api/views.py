@@ -32,6 +32,7 @@ class EventViewSet(mixins.CreateModelMixin,
 
     def list(self, request):
         events = None
+
         if 'type' in request.query_params:
             type=request.query_params.get('type')
             if type == 'past':
@@ -44,14 +45,30 @@ class EventViewSet(mixins.CreateModelMixin,
                 return Response({}, status=status.HTTP_400_BAD_REQUEST)
         else:
             events = Event.objects.all()
-        serializer = EventSerializer(events, many=True)
+
+
+
+        show_progress = False
         if 'userId' in request.query_params:
+            show_progress = True
             if 'participatedOnly' in request.query_params:
                 if request.query_params.get('participatedOnly') == "true":
                     events=events.filter(treasurehunt__citizenactqrcode__usercitizenact__profile__id  =  request.query_params['userId'])
-                    serializer = EventSerializer(events, many=True)
+
+        #sorting is done after all others operation on events
+        if 'sort' in request.query_params:
+            sort_type = request.query_params.get('sort')
+            if sort_type == 'startDate':
+                events = events.order_by('start_date')
+
+        #serialization
+        serializer = EventSerializer(events, many=True)
+
+        #Extra attributes are added to the data after serialization
+        if show_progress:
             for s_event in serializer.data:
                 s_event['progress'] = Event.objects.get(id=s_event['id']).progress(request.query_params['userId'])
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, pk=None):
@@ -74,7 +91,6 @@ class EventViewSet(mixins.CreateModelMixin,
         serializer = CitizenActQRCodeSerializer(citizenActQRCode, many=True)
         if 'userId' in request.query_params:
             for s_qrCodes in serializer.data:
-                print(s_qrCodes)
                 try:
                     completion = (
                         UserCitizenAct.objects.get(
