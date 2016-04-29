@@ -45,8 +45,9 @@ class PartnerOfferViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerOfferSerializer
     queryset = PartnerOffer.objects.all()
 
-    # we define a custom get in order to return a representation wich is flatten
+
     def retrieve(self, request, pk=None):
+        # we define a custom get in order to return a representation wich is flatten
         # we find the corresponding partner_offer
         partner_offer = get_object_or_404(PartnerOffer.objects.all(), pk=pk)
 
@@ -66,9 +67,11 @@ class PartnerOfferViewSet(viewsets.ModelViewSet):
         return Response(data_offer)
 
     def list(self, request):
+        #we define a custom list in order to get the flatten partner as a representation
         partner_offers = PartnerOffer.objects.all()
         list_return = []
 
+        #we use retrieve !
         for offer in partner_offers:
             resp = self.retrieve(request, offer.pk)
             list_return.append(resp.data)

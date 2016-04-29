@@ -58,6 +58,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
+
 class PartnerOfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartnerOffer
