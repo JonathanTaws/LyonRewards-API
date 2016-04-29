@@ -239,6 +239,8 @@ def credit(request, userId, actId):
     profile.global_points += act.points
     profile.current_points += act.points
 
+    profile.save()
+
     return Response(ProfileSerializer(profile).data)
 
 
