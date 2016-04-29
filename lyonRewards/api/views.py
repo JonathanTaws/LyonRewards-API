@@ -39,7 +39,8 @@ class EventViewSet(mixins.CreateModelMixin,
         if 'userId' in request.query_params:
             s_dict = dict(serializer.data)
             s_dict['progress'] = Event.objects.get(id=serializer.data['id']).progress(request.query_params['userId'])
-        return Response(s_dict, status=status.HTTP_200_OK)
+            return Response(s_dict, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @detail_route(methods=['post'])
     def hunt(self, request, *args, **kwargs):
