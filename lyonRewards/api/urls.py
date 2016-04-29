@@ -5,6 +5,7 @@ from rest_framework.authtoken import views as view_authtoken
 
 # Create a router and register our viewsets with it.
 import api
+from api.customs import CustomObtainAuthToken
 
 router = DefaultRouter()
 router.register(r'tags', views.TagViewSet)
@@ -21,6 +22,6 @@ urlpatterns = [
     url(r'^users/(?P<userId>[0-9]+)/offers/(?P<offerId>[0-9]+)/debit', api.views.debit),
     url(r'^users/(?P<userId>[0-9]+)/acts/(?P<actId>[0-9]+)/credit', api.views.credit),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^login/', view_authtoken.obtain_auth_token)
+    url(r'^login/', CustomObtainAuthToken.as_view())
 ]
 
