@@ -76,12 +76,10 @@ class EventViewSet(mixins.CreateModelMixin,
             for s_qrCodes in serializer.data:
                 print(s_qrCodes)
                 try:
-                    print(s_qrCodes.get('id'))
                     completion = (
                         UserCitizenAct.objects.get(
                             citizen_act__id = s_qrCodes.get('id'),
                             profile__id = request.query_params.get('userId')))
-                    print("yolo")
                     s_qrCodes['completed'] = True
                     s_qrCodes['date'] = completion.date
                 except ObjectDoesNotExist:
