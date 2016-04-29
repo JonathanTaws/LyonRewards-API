@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'^users/(?P<userId>[0-9]+)/offers/(?P<offerId>[0-9]+)/debit', api.views.debit),
     url(r'^users/(?P<userId>[0-9]+)/acts/(?P<actId>[0-9]+)/credit', api.views.credit),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^login/', CustomObtainAuthToken.as_view())
+    url(r'^login/', CustomObtainAuthToken.as_view()),
+    url(r'^docs/', include('rest_framework_swagger.urls')),
 ]
 
