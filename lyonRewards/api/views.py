@@ -231,8 +231,15 @@ def credit(request, userId, actId):
     except:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+    # we check if we are talking about an citizenQRCode or a regularQrCode
+    try:
+        CitizenAct.citizenactqrcode
+        qrCode = True
+    except:
+        qrCode= False
+
     # we check if the user has already scanned this QR Code
-    if UserCitizenAct.objects.filter(profile=profile, citizen_act=act).count() != 0:
+    if qrCode and UserCitizenAct.objects.filter(profile=profile, citizen_act=act).count() != 0:
         return Response(status=status.HTTP_403_FORBIDDEN)
 
     user_citizen_act = UserCitizenAct(profile=profile, citizen_act=act, date=datetime.now())
