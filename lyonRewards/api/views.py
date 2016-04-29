@@ -1,7 +1,6 @@
 from datetime import datetime
 import json
 from django.core.exceptions import ObjectDoesNotExist
-
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import detail_route, api_view
@@ -28,14 +27,18 @@ class EventViewSet(mixins.CreateModelMixin,
     queryset = Event.objects.all()
 
     def list(self, request):
-        events = Event.objects.all()
-        serializer = EventSerializer(events, many=True)
+        serializer = EventSerializer(Event.objects.all(), many=True)
         if 'userId' in request.query_params:
             for s_event in serializer.data:
                 s_event['progress'] = Event.objects.get(id=s_event['id']).progress(request.query_params['userId'])
-                print(s_event['progress'])
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def retrieve(self, request, pk=None):
+        serializer = EventSerializer(self.get_object())
+        if 'userId' in request.query_params:
+            s_dict = dict(serializer.data)
+            s_dict['progress'] = Event.objects.get(id=serializer.data['id']).progress(request.query_params['userId'])
+        return Response(s_dict, status=status.HTTP_200_OK)
 
     @detail_route(methods=['post'])
     def hunt(self, request, *args, **kwargs):
