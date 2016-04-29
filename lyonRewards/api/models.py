@@ -26,6 +26,13 @@ class Event(models.Model):
     image_url = models.CharField(max_length=100)
     tags = models.ManyToManyField('Tag')
 
+    def progress(self, profile):
+        return (
+            CitizenActQRCode.objects.
+            filter(treasure_hunt__event = self).
+            filter(usercitizenact__profile = profile).
+            count()/float(CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()))
+
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)  # One-to-One liaison, no inheritance

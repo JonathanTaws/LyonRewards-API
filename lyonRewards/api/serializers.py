@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from api.models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, CitizenAct, CitizenActQRCode
+from models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, CitizenAct, CitizenActQRCode
 
 
 class TagSerializer(serializers.ModelSerializer):
