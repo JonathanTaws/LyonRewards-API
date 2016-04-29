@@ -27,11 +27,14 @@ class Event(models.Model):
     tags = models.ManyToManyField('Tag')
 
     def progress(self, profile):
+        qrCodes = CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()
+        if qrCodes == 0:
+            return 0
         return (
             CitizenActQRCode.objects.
             filter(treasure_hunt__event = self).
             filter(usercitizenact__profile = profile).
-            count()/float(CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()))
+            count()/float(qrCodes))
 
 
 class Profile(models.Model):
