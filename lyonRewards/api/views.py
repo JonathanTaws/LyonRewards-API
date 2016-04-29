@@ -34,7 +34,7 @@ class EventViewSet(mixins.CreateModelMixin,
         events = None
 
         if 'type' in request.query_params:
-            type=request.query_params.get('type')
+            type = request.query_params.get('type')
             if type == 'past':
                 events = Event.objects.filter(end_date__lt=datetime.now())
             elif type == 'ongoing':
@@ -46,25 +46,24 @@ class EventViewSet(mixins.CreateModelMixin,
         else:
             events = Event.objects.all()
 
-
-
         show_progress = False
         if 'userId' in request.query_params:
             show_progress = True
             if 'participatedOnly' in request.query_params:
                 if request.query_params.get('participatedOnly') == "true":
-                    events=events.filter(treasurehunt__citizenactqrcode__usercitizenact__profile__id  =  request.query_params['userId'])
+                    events = events.filter(
+                        treasurehunt__citizenactqrcode__usercitizenact__profile__id=request.query_params['userId'])
 
-        #sorting is done after all others operation on events
+        # sorting is done after all others operation on events
         if 'sort' in request.query_params:
             sort_type = request.query_params.get('sort')
             if sort_type == 'startDate':
                 events = events.order_by('start_date')
 
-        #serialization
+        # serialization
         serializer = EventSerializer(events, many=True)
 
-        #Extra attributes are added to the data after serialization
+        # Extra attributes are added to the data after serialization
         if show_progress:
             for s_event in serializer.data:
                 s_event['progress'] = Event.objects.get(id=s_event['id']).progress(request.query_params['userId'])
@@ -94,8 +93,8 @@ class EventViewSet(mixins.CreateModelMixin,
                 try:
                     completion = (
                         UserCitizenAct.objects.get(
-                            citizen_act__id = s_qrCodes.get('id'),
-                            profile__id = request.query_params.get('userId')))
+                            citizen_act__id=s_qrCodes.get('id'),
+                            profile__id=request.query_params.get('userId')))
                     s_qrCodes['completed'] = True
                     s_qrCodes['date'] = completion.date
                 except ObjectDoesNotExist:
@@ -170,7 +169,7 @@ class CitizenActViewSet(mixins.ListModelMixin,
             serializer = CitizenActQRCodeSerializer(data=request.data)
             if serializer.is_valid():
                 citizenActQRCode = CitizenActQRCode(**serializer.validated_data)
-            
+
                 citizenActQRCode.save()
                 return Response(serializer.errors, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -208,7 +207,7 @@ def debit(request, userId, offerId):
     user_partner_offer.save()
 
     # we deduce the corresponding amount of money from the user
-    if profile.current_points > offer.points:
+    if profile.current_points >= offer.points:
         profile.current_points -= offer.points
         profile.save()
 
@@ -232,6 +231,10 @@ def credit(request, userId, actId):
     except:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+    # we check if the user has already scanned this QR Code
+    if UserCitizenAct.objects.filter(profile=profile, citizen_act=act).count() != 0:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
     user_citizen_act = UserCitizenAct(profile=profile, citizen_act=act, date=datetime.now())
     user_citizen_act.save()
 
@@ -242,6 +245,3 @@ def credit(request, userId, actId):
     profile.save()
 
     return Response(ProfileSerializer(profile).data)
-
-
-
