@@ -1,7 +1,7 @@
 import datetime
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save, pre_delete, post_delete
 from django.dispatch import receiver
 from django.utils.timezone import now
 from rest_framework.authtoken.models import Token
@@ -43,7 +43,7 @@ class Event(models.Model):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)  # One-to-One liaison, no inheritance
+    user = models.OneToOneField(User)  # One-to-One liaison, no inheritance
     global_points = models.PositiveIntegerField()
     current_points = models.PositiveIntegerField()
 
@@ -52,6 +52,12 @@ class Profile(models.Model):
 
     def __unicode__(self):
         return "Profil de {0}".format(self.user.username)
+
+@receiver(post_delete, sender=Profile)
+def my_handler(sender, instance, **kwargs):
+    #we destroy the user before deleting the profile
+    print("destroying user")
+    instance.user.delete()
 
 @receiver(post_save, sender=User)
 def create_auth_token(sender, instance=None, created=False, **kwargs):

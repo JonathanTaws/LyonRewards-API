@@ -196,15 +196,5 @@ def credit(request, userId, actId):
 
     return Response(ProfileSerializer(profile).data)
 
-@api_view(['POST'])
-def get_token(request, *args, **kwargs):
-    # we redefine the way of returning token
-    serializer = AuthTokenSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    user = serializer.validated_data['user']
-    token, created = Token.objects.get_or_create(user=user)
-
-    # we also add the user
-    return Response({'token': token.key, 'user': user})
 
 
