@@ -4,8 +4,11 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import detail_route, api_view
 from rest_framework.response import Response
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework.authtoken.models import Token
 
 from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt, \
     UserPartnerOffer, UserCitizenAct
@@ -20,10 +23,10 @@ class TagViewSet(viewsets.ModelViewSet):
 
 
 class EventViewSet(mixins.CreateModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.RetrieveModelMixin,
-                        mixins.DestroyModelMixin,
-                        viewsets.GenericViewSet):
+                   mixins.UpdateModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.DestroyModelMixin,
+                   viewsets.GenericViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
 
@@ -59,18 +62,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
-    #we redefine the get
-    # if pk is a string, we retrieve the username, else we retrieve with the id
-    def retrieve(self, request, pk=None):
-        user = get_object_or_404(User.objects.all(), username=pk)
-        profil = get_object_or_404(Profile.objects.all(), user=user)
-        serializer = self.get_serializer(profil)
-        return Response(serializer.data)
 
 class PartnerOfferViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerOfferSerializer
     queryset = PartnerOffer.objects.all()
-
 
     def retrieve(self, request, pk=None):
         # we define a custom get in order to return a representation wich is flatten
@@ -84,7 +79,7 @@ class PartnerOfferViewSet(viewsets.ModelViewSet):
         serializer_partner = PartnerSerializer(partner)
         serializer_offer = PartnerOfferSerializer(partner_offer)
 
-        #mixing the two dico
+        # mixing the two dico
         data_offer = dict(serializer_offer.data)
         data_partner = dict(serializer_partner.data)
 
@@ -93,11 +88,11 @@ class PartnerOfferViewSet(viewsets.ModelViewSet):
         return Response(data_offer)
 
     def list(self, request):
-        #we define a custom list in order to get the flatten partner as a representation
+        # we define a custom list in order to get the flatten partner as a representation
         partner_offers = PartnerOffer.objects.all()
         list_return = []
 
-        #we use retrieve !
+        # we use retrieve !
         for offer in partner_offers:
             resp = self.retrieve(request, offer.pk)
             list_return.append(resp.data)
@@ -200,3 +195,16 @@ def credit(request, userId, actId):
     profile.current_points += act.points
 
     return Response(ProfileSerializer(profile).data)
+
+@api_view(['POST'])
+def get_token(request, *args, **kwargs):
+    # we redefine the way of returning token
+    serializer = AuthTokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.validated_data['user']
+    token, created = Token.objects.get_or_create(user=user)
+
+    # we also add the user
+    return Response({'token': token.key, 'user': user})
+
+
