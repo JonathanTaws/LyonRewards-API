@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
@@ -51,7 +52,8 @@ class EventViewSet(mixins.CreateModelMixin,
         if 'userId' in request.query_params:
             s_dict = dict(serializer.data)
             s_dict['progress'] = Event.objects.get(id=serializer.data['id']).progress(request.query_params['userId'])
-        return Response(s_dict, status=status.HTTP_200_OK)
+            return Response(s_dict, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @detail_route(methods=['post'])
     def hunt(self, request, *args, **kwargs):
@@ -70,13 +72,21 @@ class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
+    #we redefine the get
+    # if pk is a string, we retrieve the username, else we retrieve with the id
+    def retrieve(self, request, pk=None):
+        user = get_object_or_404(User.objects.all(), username=pk)
+        profil = get_object_or_404(Profile.objects.all(), user=user)
+        serializer = self.get_serializer(profil)
+        return Response(serializer.data)
 
 class PartnerOfferViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerOfferSerializer
     queryset = PartnerOffer.objects.all()
 
-    # we define a custom get in order to return a representation wich is flatten
+
     def retrieve(self, request, pk=None):
+        # we define a custom get in order to return a representation wich is flatten
         # we find the corresponding partner_offer
         partner_offer = get_object_or_404(PartnerOffer.objects.all(), pk=pk)
 
@@ -96,9 +106,11 @@ class PartnerOfferViewSet(viewsets.ModelViewSet):
         return Response(data_offer)
 
     def list(self, request):
+        #we define a custom list in order to get the flatten partner as a representation
         partner_offers = PartnerOffer.objects.all()
         list_return = []
 
+        #we use retrieve !
         for offer in partner_offers:
             resp = self.retrieve(request, offer.pk)
             list_return.append(resp.data)
@@ -131,6 +143,7 @@ class CitizenActViewSet(mixins.ListModelMixin,
             serializer = CitizenActQRCodeSerializer(data=request.data)
             if serializer.is_valid():
                 citizenActQRCode = CitizenActQRCode(**serializer.validated_data)
+            
                 citizenActQRCode.save()
                 return Response(serializer.errors, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
