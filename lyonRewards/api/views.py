@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
@@ -57,6 +58,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
+    #we redefine the get
+    # if pk is a string, we retrieve the username, else we retrieve with the id
+    def retrieve(self, request, pk=None):
+        user = get_object_or_404(User.objects.all(), username=pk)
+        profil = get_object_or_404(Profile.objects.all(), user=user)
+        serializer = self.get_serializer(profil)
+        return Response(serializer.data)
 
 class PartnerOfferViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerOfferSerializer
