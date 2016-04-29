@@ -1,5 +1,5 @@
 from datetime import datetime
-import json
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
@@ -27,7 +27,20 @@ class EventViewSet(mixins.CreateModelMixin,
     queryset = Event.objects.all()
 
     def list(self, request):
-        serializer = EventSerializer(Event.objects.all(), many=True)
+        events = None
+        if 'type' in request.query_params:
+            type=request.query_params.get('type')
+            if type == 'past':
+                events = Event.objects.filter(end_date__date__lt=datetime.now())
+            elif type == 'ongoing':
+                events = Event.objects.filter(start_date__date__gte=datetime.now()).filter(end_date__date__lt = datetime.now())
+            elif type == 'future':
+                events = Event.objects.filter(start_date__date__gt=datetime.now())
+            else:
+                return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            events = Event.objects.all()
+        serializer = EventSerializer(events, many=True)
         if 'userId' in request.query_params:
             for s_event in serializer.data:
                 s_event['progress'] = Event.objects.get(id=s_event['id']).progress(request.query_params['userId'])
@@ -118,11 +131,10 @@ class CitizenActViewSet(mixins.ListModelMixin,
             serializer = CitizenActQRCodeSerializer(data=request.data)
             if serializer.is_valid():
                 citizenActQRCode = CitizenActQRCode(**serializer.validated_data)
-                print(citizenActQRCode.treasure_hunt)
                 citizenActQRCode.save()
                 return Response(serializer.errors, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
-        return Response({}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        return Response({}, status=status.HTTP_428_PRECONDITION_REQUIRED)
 
     def update(self, request):
         pass
