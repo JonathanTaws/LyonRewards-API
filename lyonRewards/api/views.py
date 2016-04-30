@@ -219,8 +219,7 @@ def debit(request, userId, offerId):
         # we first retireve the token given in paramaters
         token_mobile = request.query_params.get('token_mobile')
 
-        headers = {"Authorization": "key=AIzaSyDTDxOSbGp9vNX7dWc5PLmzKz55S_0Z_M8", \
-                   "Content-Type": "application/json"}
+        headers = {"Authorization": "key=AIzaSyDTDxOSbGp9vNX7dWc5PLmzKz55S_0Z_M8"}
         data = {
             "data": {
                 "score": str(offer.points),
