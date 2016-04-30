@@ -117,7 +117,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @list_route()
     def ranking(self, request):
-        profiles=Profile.objects.all().order_by('global_points')
+        profiles=Profile.objects.all().order_by('-global_points')
         serializer = ProfileSerializer(profiles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
