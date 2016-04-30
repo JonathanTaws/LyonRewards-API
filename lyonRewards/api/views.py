@@ -1,3 +1,5 @@
+import requests
+import json
 from datetime import datetime
 
 from django.contrib.auth.models import User
@@ -10,8 +12,6 @@ from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
 
-import requests
-import json
 
 from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt, \
     UserPartnerOffer, UserCitizenAct

@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save, pre_save, pre_delete, post_delete
@@ -52,6 +52,25 @@ class Profile(models.Model):
 
     def __unicode__(self):
         return "Profil de {0}".format(self.user.username)
+
+    @property
+    def last_tfh_points(self):
+        date_from = datetime.now() - timedelta(days=1)
+        return (
+            CitizenAct.objects
+            .filter(usercitizenact__profile=self)
+            .filter(usercitizenact__date__gte=date_from )
+            .aggregate(last_tfh_points=models.Sum('points')))
+
+    @property
+    def last_month_points(self):
+        date_from = datetime.now() - timedelta(days=30)
+        return (
+            CitizenAct.objects
+            .filter(usercitizenact__profile=self)
+            .filter(usercitizenact__date__gte=date_from )
+            .aggregate(last_month_points=models.Sum('points')))
+
 
 @receiver(post_delete, sender=Profile)
 def my_handler(sender, instance, **kwargs):
