@@ -260,7 +260,7 @@ def debit(request, userId, offerId):
             "data": {
                 "score": str(offer.points),
                 "time": str(datetime.now()),
-                "idOffer": str(offerId),
+                "id_offer": str(offerId),
                 "new_score": str(profile.current_points)
             },
             "to": token_mobile
