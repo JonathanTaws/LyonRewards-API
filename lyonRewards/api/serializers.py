@@ -1,6 +1,9 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
-from api.models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, CitizenAct, CitizenActQRCode
+
+from api.models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, UserCitizenAct, CitizenAct, CitizenActQRCode
+
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -87,3 +90,5 @@ class CitizenActQRCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CitizenActQRCode
         fields = '__all__'
+
+

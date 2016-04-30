@@ -107,6 +107,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
+    @detail_route(methods=['post'])
+    def registerGCM(self, request):
+        pass
+
 
 class PartnerOfferViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerOfferSerializer
@@ -158,19 +162,50 @@ class PartnerViewSet(viewsets.ModelViewSet):
 
 
 class CitizenActViewSet(mixins.ListModelMixin,
-                        mixins.RetrieveModelMixin,
                         mixins.DestroyModelMixin,
                         viewsets.GenericViewSet):
     serializer_class = CitizenActSerializer
     queryset = CitizenAct.objects.all()
 
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        serializer = None
+        if 'type' in request.query_params:
+            type = request.query_params.get('type')
+
+            if type == 'qrcode':
+                try:
+                    serializer = CitizenActQRCodeSerializer(self.get_object().citizenactqrcode)
+                except CitizenActQRCode.DoesNotExist:
+                    return Response({'Error' : 'The requested CitizenAct is not of the specified type'}, status = status.HTTP_400_BAD_REQUEST)
+                s_dict = dict(serializer.data)
+                if 'userId' in request.query_params:
+
+                    try:
+                        completion = (
+                            UserCitizenAct.objects.get(
+                                citizen_act__id=serializer.data.get('id'),
+                                profile__id=request.query_params.get('userId')))
+                        s_dict['completed'] = True
+                        s_dict['date'] = completion.date
+                    except ObjectDoesNotExist:
+                        s_dict['completed'] = False
+                return Response(s_dict, status=status.HTTP_200_OK)
+
+            else:
+                return Response({}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        else:
+            return Response(CitizenActSerializer(self.get_object()).data, status=status.HTTP_200_OK)
+
     def create(self, request):
-        type = request.query_params.get('type')
+        try:
+            type = request.query_params.get('type')
+        except KeyErrorException:
+            return Response({}, status = status.HTTP_406_NOT_ACCEPTABLE)
         if type == 'qrcode':
             serializer = CitizenActQRCodeSerializer(data=request.data)
             if serializer.is_valid():
                 citizenActQRCode = CitizenActQRCode(**serializer.validated_data)
-
                 citizenActQRCode.save()
                 return Response(serializer.errors, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -185,7 +220,7 @@ class CitizenActViewSet(mixins.ListModelMixin,
             event = self.get_object().citizenactqrcode.treasure_hunt.event
             serializer = EventSerializer(event)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except(ObjectDoesNotExist):
+        except ObjectDoesNotExist :
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
