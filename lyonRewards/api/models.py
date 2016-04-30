@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import datetime
 from django.db import models
 from django.contrib.auth.models import User
@@ -18,7 +19,7 @@ class Tag(models.Model):
         return "{0}".format(self.title)
 
     def __unicode__(self):
-        return "{0}".format(self.title)
+        return u"{0}".format(self.title)
 
 
 class Event(models.Model):
