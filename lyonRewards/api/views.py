@@ -119,6 +119,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def ranking(self, request):
         profiles=Profile.objects.all().order_by('-global_points')
         serializer = ProfileSerializer(profiles, many=True)
+        if 'userId' in request.query_params:
+            for index, profile in enumerate(profiles):
+                print(profile.id)
+                print(request.query_params.get('userId'))
+                if profile.id == int(request.query_params.get('userId')):
+                    return Response(
+                        {'ranking' : serializer.data, 'specified_user_rank': index},
+                        status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
