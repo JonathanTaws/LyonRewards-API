@@ -263,11 +263,11 @@ def debit(request, userId, offerId):
         headers = {"Authorization": "key=AIzaSyDTDxOSbGp9vNX7dWc5PLmzKz55S_0Z_M8", 'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {
             "data": {
-                "score": str(offer.points),
-                "time": str(datetime.now()),
-                "id_offer": str(offerId),
-                "new_score": str(profile.current_points),
-                "title": str(offer.title)
+                "score": u"{}".format(offer.points),
+                "time": u"{}".format(datetime.now()),
+                "id_offer": u"{}".format(offerId),
+                "new_score": u"{}".format(profile.current_points),
+                "title": u"{}".format(offer.title)
             },
             "to": token_mobile
         }
