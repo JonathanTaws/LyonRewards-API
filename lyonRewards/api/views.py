@@ -261,7 +261,8 @@ def debit(request, userId, offerId):
                 "score": str(offer.points),
                 "time": str(datetime.now()),
                 "id_offer": str(offerId),
-                "new_score": str(profile.current_points)
+                "new_score": str(profile.current_points),
+                "title": str(offer.title)
             },
             "to": token_mobile
         }
