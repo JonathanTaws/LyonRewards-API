@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
 from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.decorators import detail_route, api_view
+from rest_framework.decorators import detail_route,list_route, api_view
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
@@ -115,9 +115,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
-    @detail_route(methods=['post'])
-    def registerGCM(self, request):
-        pass
+    @list_route()
+    def ranking(self, request):
+        profiles=Profile.objects.all().order_by('global_points')
+        serializer = ProfileSerializer(profiles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PartnerOfferViewSet(viewsets.ModelViewSet):

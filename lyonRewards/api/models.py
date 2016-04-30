@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import datetime
+from datetime import datetime, timedelta
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save, pre_save, pre_delete, post_delete
