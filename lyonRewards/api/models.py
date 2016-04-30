@@ -22,7 +22,7 @@ class Tag(models.Model):
 
 class Event(models.Model):
     title = models.CharField(max_length=100)
-    description = models.TextField(max_length=100)
+    description = models.TextField()
     publish_date = models.DateTimeField(default=now, verbose_name="Date of publication")
     start_date = models.DateTimeField(default=now, verbose_name="Start of the event")
     end_date = models.DateTimeField(default=now, verbose_name="End of the event")
