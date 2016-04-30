@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
 
+import requests
+
 from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt, \
     UserPartnerOffer, UserCitizenAct
 from api.serializers import (
@@ -46,14 +48,14 @@ class EventViewSet(mixins.CreateModelMixin,
         else:
             events = Event.objects.all()
 
-
-
         show_progress = False
         if 'userId' in request.query_params:
             show_progress = True
             if 'participatedOnly' in request.query_params:
                 if request.query_params.get('participatedOnly') == "true":
-                    events=events.filter(treasurehunt__citizenactqrcode__usercitizenact__profile__id  =  request.query_params['userId']).distinct()
+                    events = events.filter(
+                        treasurehunt__citizenactqrcode__usercitizenact__profile__id=request.query_params[
+                            'userId']).distinct()
 
         # sorting is done after all others operation on events
         if 'sort' in request.query_params:
@@ -238,14 +240,34 @@ def debit(request, userId, offerId):
     except:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    # we save it in database
-    user_partner_offer = UserPartnerOffer(profile=profile, partner_offer=offer, date=datetime.now())
-    user_partner_offer.save()
-
     # we deduce the corresponding amount of money from the user
     if profile.current_points >= offer.points:
         profile.current_points -= offer.points
         profile.save()
+
+        # we save it in database
+        user_partner_offer = UserPartnerOffer(profile=profile, partner_offer=offer, date=datetime.now())
+        user_partner_offer.save()
+
+
+        # we call the google service to send a notification
+        # we first retireve the token given in paramaters
+        token_mobile = request.query_params.get('token_mobile')
+
+        headers = {"Authorization": "key=AIzaSyDTDxOSbGp9vNX7dWc5PLmzKz55S_0Z_M8", \
+                   "Content-Type": "application/json"}
+        data = {
+            "data": {
+                "score": str(offer.points),
+                "time": str(datetime.now())
+            },
+            "to": str(token_mobile)
+        }
+
+        try:
+            request_google_gcm = requests.post('https://gcm-http.googleapis.com/gcm/send', data=data, headers=headers)
+        except:
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         # we return the new user if we deduced the correct amount of points
         return Response(ProfileSerializer(profile).data)
@@ -272,7 +294,7 @@ def credit(request, userId, actId):
         CitizenAct.citizenactqrcode
         qrCode = True
     except:
-        qrCode= False
+        qrCode = False
 
     # we check if the user has already scanned this QR Code
     if qrCode and UserCitizenAct.objects.filter(profile=profile, citizen_act=act).count() != 0:
@@ -288,6 +310,3 @@ def credit(request, userId, actId):
     profile.save()
 
     return Response(ProfileSerializer(profile).data)
-
-
-
