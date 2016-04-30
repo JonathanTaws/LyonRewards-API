@@ -260,7 +260,7 @@ def debit(request, userId, offerId):
                 "score": str(offer.points),
                 "time": str(datetime.now())
             },
-            "to": str(token_mobile)
+            "to": token_mobile
         }
 
         try:
