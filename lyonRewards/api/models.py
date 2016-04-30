@@ -53,7 +53,7 @@ class Profile(models.Model):
         return "Profil de {0}".format(self.user.username)
 
     def __unicode__(self):
-        return "Profil de {0}".format(self.user.username)
+        return u"Profil de {0}".format(self.user.username)
 
 @receiver(post_delete, sender=Profile)
 def my_handler(sender, instance, **kwargs):
@@ -76,7 +76,7 @@ class CitizenAct(models.Model):
         return "{0}".format(self.title)
 
     def __unicode__(self):
-        return "{0}".format(self.title)
+        return u"{0}".format(self.title)
 
 
 class TreasureHunt(models.Model):
@@ -86,7 +86,7 @@ class TreasureHunt(models.Model):
         return "TreasureHunt {0}".format(self.id)
 
     def __unicode__(self):
-        return "TreasureHunt {0}".format(self.id)
+        return u"TreasureHunt {0}".format(self.id)
 
 
 class CitizenActQRCode(CitizenAct):
@@ -96,7 +96,7 @@ class CitizenActQRCode(CitizenAct):
         return "CitizenActQRCode {0}".format(self.title)
 
     def __unicode__(self):
-        return "CitizenActQRCode {0}".format(self.title)
+        return u"CitizenActQRCode {0}".format(self.title)
 
 
 class UserCitizenAct(models.Model):
@@ -108,7 +108,7 @@ class UserCitizenAct(models.Model):
         return "UserCitizenAct {0}".format(self.date)
 
     def __unicode__(self):
-        return "UserCitizenAct {0}".format(self.date)
+        return u"UserCitizenAct {0}".format(self.date)
 
 
 class Partner(models.Model):
@@ -121,7 +121,7 @@ class Partner(models.Model):
         return "{0}".format(self.name)
 
     def __unicode__(self):
-        return "{0}".format(self.name)
+        return u"{0}".format(self.name)
 
 
 class PartnerOffer(models.Model):
@@ -134,7 +134,7 @@ class PartnerOffer(models.Model):
         return "{0}".format(self.description)
 
     def __unicode__(self):
-        return "{0}".format(self.description)
+        return u"{0}".format(self.description)
 
 
 class UserPartnerOffer(models.Model):
@@ -146,6 +146,6 @@ class UserPartnerOffer(models.Model):
         return "UserPartnerOffer {0}".format(self.date)
 
     def __unicode__(self):
-        return "UserPartnerOffer {0}".format(self.date)
+        return u"UserPartnerOffer {0}".format(self.date)
 
 
