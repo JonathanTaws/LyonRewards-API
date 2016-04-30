@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.conf.urls import url, include
 from api import views
 from rest_framework.routers import DefaultRouter
