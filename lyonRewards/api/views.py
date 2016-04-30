@@ -11,6 +11,7 @@ from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
 
 import requests
+import json
 
 from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt, \
     UserPartnerOffer, UserCitizenAct
@@ -202,7 +203,7 @@ class CitizenActViewSet(mixins.ListModelMixin,
     def create(self, request):
         try:
             type = request.query_params.get('type')
-        except KeyErrorException:
+        except KeyError:
             return Response({}, status = status.HTTP_406_NOT_ACCEPTABLE)
         if type == 'qrcode':
             serializer = CitizenActQRCodeSerializer(data=request.data)
@@ -264,7 +265,7 @@ def debit(request, userId, offerId):
         }
 
         try:
-            request_google_gcm = requests.post('https://gcm-http.googleapis.com/gcm/send', data=data, headers=headers)
+            request_google_gcm = requests.post('https://gcm-http.googleapis.com/gcm/send', data=json.dumps(data), headers=headers)
         except:
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
