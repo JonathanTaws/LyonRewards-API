@@ -29,7 +29,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     date_joined = serializers.DateTimeField(source='user.date_joined')
-    groups = serializers.ManyRelatedField(source='user.groups')
+    #groups = serializers.ManyRelatedField(source='user.groups')
     last_tfh_points = serializers.SerializerMethodField()
     last_month_points = serializers.SerializerMethodField()
 
