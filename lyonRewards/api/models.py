@@ -58,20 +58,22 @@ class Profile(models.Model):
     @property
     def last_tfh_points(self):
         date_from = datetime.now() - timedelta(days=1)
-        return (
+        sum = (
             CitizenAct.objects
             .filter(usercitizenact__profile=self)
-            .filter(usercitizenact__date__gte=date_from )
+            .filter(usercitizenact__date__gte=date_from)
             .aggregate(last_tfh_points=models.Sum('points')))
+        return sum.get('last_tfh_points') if sum.get('last_tfh_points') else 0
 
     @property
     def last_month_points(self):
         date_from = datetime.now() - timedelta(days=30)
-        return (
+        sum = (
             CitizenAct.objects
             .filter(usercitizenact__profile=self)
-            .filter(usercitizenact__date__gte=date_from )
+            .filter(usercitizenact__date__gte=date_from)
             .aggregate(last_month_points=models.Sum('points')))
+        return sum.get('last_month_points') if sum.get('last_month_points') else 0
 
 
 @receiver(post_delete, sender=Profile)

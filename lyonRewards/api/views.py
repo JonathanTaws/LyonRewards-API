@@ -125,7 +125,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 print(request.query_params.get('userId'))
                 if profile.id == int(request.query_params.get('userId')):
                     return Response(
-                        {'ranking' : serializer.data, 'specified_user_rank': index},
+                        {'ranking' : serializer.data, 'specified_user_rank': index+1},
                         status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

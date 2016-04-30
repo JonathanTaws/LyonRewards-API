@@ -29,18 +29,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True)
-    last_tfh_points = serializers.SerializerMethodField()
-    last_month_points = serializers.SerializerMethodField()
+    last_tfh_points = serializers.IntegerField()
+    last_month_points = serializers.IntegerField()
 
     class Meta:
         model = Profile
         fields = ('id', 'username', 'password','email', 'first_name', 'last_name', 'date_joined', 'global_points', 'current_points', 'last_tfh_points', 'last_month_points')
-
-    def get_last_tfh_points(self, obj):
-        return obj.last_tfh_points['last_tfh_points']
-
-    def get_last_month_points(self, obj):
-        return obj.last_month_points['last_month_points']
 
     def create(self, validated_data):
         # we define what the serializer must do when creating a profile
