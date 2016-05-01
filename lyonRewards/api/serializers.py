@@ -41,12 +41,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     #groups = GroupSerializer(source="user.groups", many=True)
 
     last_tfh_points = serializers.IntegerField(read_only=True)
-    last_month_points = serializers.IntegerField(read_only=True)
+    current_month_points = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Profile
         fields = ('id', 'username', 'password', 'email', 'first_name', 'last_name', 'date_joined', 'global_points',
-                  'current_points', 'last_tfh_points', 'last_month_points')
+                  'current_points', 'last_tfh_points', 'current_month_points')
 
     def create(self, validated_data):
         # we define what the serializer must do when creating a profile

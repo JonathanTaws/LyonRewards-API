@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save, pre_save, pre_delete, post_delete
@@ -61,21 +62,24 @@ class Profile(models.Model):
         date_from = datetime.now() - timedelta(days=1)
         sum = (
             CitizenAct.objects
-            .filter(usercitizenact__profile=self)
-            .filter(usercitizenact__date__gte=date_from)
+            .filter(usercitizenact__profile=self, usercitizenact__date__gte=date_from)
             .aggregate(last_tfh_points=models.Sum('points')))
         return sum.get('last_tfh_points') if sum.get('last_tfh_points') else 0
 
     @property
-    def last_month_points(self):
-        date_from = datetime.now() - timedelta(days=30)
+    def current_month_points(self):
         sum = (
             CitizenAct.objects
-            .filter(usercitizenact__profile=self)
-            .filter(usercitizenact__date__gte=date_from)
-            .aggregate(last_month_points=models.Sum('points')))
-        return sum.get('last_month_points') if sum.get('last_month_points') else 0
+                .filter(usercitizenact__profile=self, usercitizenact__date__month = datetime.now().month)
+                .aggregate(current_month_points=models.Sum('points')))
+        return sum.get('current_month_points') if sum.get('current_month_points') else 0
 
+    def month_points(self, month):
+        sum = (
+            CitizenAct.objects
+                .filter(usercitizenact__profile=self, usercitizenact__date__month = month)
+                .aggregate(month_points=models.Sum('points')))
+        return sum.get('month_points') if sum.get('month_points') else 0
 
 @receiver(post_delete, sender=Profile)
 def my_handler(sender, instance, **kwargs):
