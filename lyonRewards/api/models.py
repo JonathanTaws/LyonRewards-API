@@ -64,7 +64,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User)  # One-to-One liaison, no inheritance
     global_points = models.PositiveIntegerField()
     current_points = models.PositiveIntegerField()
-    group = models.ForeignKey(Group)
+    group = models.ForeignKey(Group, blank=True, null=True)
 
     def __str__(self):
         return "Profil de {0}".format(self.user.username)
