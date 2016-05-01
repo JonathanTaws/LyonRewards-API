@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.db.models.signals import post_save, pre_save, pre_delete, post_delete
 from django.dispatch import receiver
 from django.utils.timezone import now
@@ -21,6 +21,18 @@ class Tag(models.Model):
     def __unicode__(self):
         return u"{0}".format(self.title)
 
+class Partner(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    address = models.TextField()
+    image_url = models.CharField(max_length=400)
+
+
+    def __str__(self):
+        return "{0}".format(self.name)
+
+    def __unicode__(self):
+        return u"{0}".format(self.name)
 
 class Event(models.Model):
     title = models.CharField(max_length=100, unique=True)
@@ -33,6 +45,7 @@ class Event(models.Model):
     image_url = models.CharField(max_length=400)
     address = models.CharField(max_length=400)
     tags = models.ManyToManyField('Tag')
+    events = models.ForeignKey(Partner, blank=True, null=True)
 
     def progress(self, profile):
         qrCodes = CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()
@@ -45,10 +58,12 @@ class Event(models.Model):
             count()/float(qrCodes))
 
 
+
 class Profile(models.Model):
     user = models.OneToOneField(User)  # One-to-One liaison, no inheritance
     global_points = models.PositiveIntegerField()
     current_points = models.PositiveIntegerField()
+    group = models.ForeignKey(Group)
 
     def __str__(self):
         return "Profil de {0}".format(self.user.username)
@@ -78,9 +93,8 @@ class Profile(models.Model):
 
 
 @receiver(post_delete, sender=Profile)
-def my_handler(sender, instance, **kwargs):
+def delete_user(sender, instance, **kwargs):
     #we destroy the user before deleting the profile
-    print("destroying user")
     instance.user.delete()
 
 @receiver(post_save, sender=User)
@@ -133,17 +147,7 @@ class UserCitizenAct(models.Model):
         return u"UserCitizenAct {0}".format(self.date)
 
 
-class Partner(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    address = models.TextField()
-    image_url = models.CharField(max_length=400)
 
-    def __str__(self):
-        return "{0}".format(self.name)
-
-    def __unicode__(self):
-        return u"{0}".format(self.name)
 
 
 class PartnerOffer(models.Model):

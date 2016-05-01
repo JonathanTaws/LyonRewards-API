@@ -13,6 +13,11 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = '__all__'
 
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields =('name',)
+
 
 class EventSerializer(serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(many=True, queryset=Tag.objects.all(), slug_field='title')
@@ -20,12 +25,6 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
-
-
-class GroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Group
-        fields = ('name')
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -38,15 +37,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name')
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True)
 
-    #groups = GroupSerializer(source="user.groups", many=True)
-
     last_tfh_points = serializers.IntegerField()
     last_month_points = serializers.IntegerField()
 
     class Meta:
         model = Profile
         fields = ('id', 'username', 'password', 'email', 'first_name', 'last_name', 'date_joined', 'global_points',
-                  'current_points', 'last_tfh_points', 'last_month_points')
+                  'current_points', 'last_tfh_points', 'last_month_points', 'group')
 
     def create(self, validated_data):
         # we define what the serializer must do when creating a profile
@@ -71,9 +68,13 @@ class ProfileSerializer(serializers.ModelSerializer):
         instance.user.first_name = user_data['first_name']
         instance.user.last_name = user_data['last_name']
         instance.user.email = user_data['email']
-        instance.user.date_joined = user_data['date_joined']
         instance.user.save()
 
+
+        validated_data.pop('last_tfh_points')
+        validated_data.pop('last_month_points')
+
+        print(validated_data)
         super(ProfileSerializer, self).update(instance, validated_data)
 
         return instance

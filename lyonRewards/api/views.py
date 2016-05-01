@@ -4,7 +4,7 @@ import requests
 import json
 from datetime import datetime
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
@@ -20,12 +20,16 @@ from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, C
     UserPartnerOffer, UserCitizenAct
 from api.serializers import (
     TagSerializer, EventSerializer, ProfileSerializer, PartnerOfferSerializer, PartnerSerializer,
-    CitizenActSerializer, CitizenActQRCodeSerializer)
+    CitizenActSerializer, CitizenActQRCodeSerializer, GroupSerializer)
 
 
 class TagViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
+
+class GroupViewSet(viewsets.ModelViewSet):
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
 
 
 class EventViewSet(mixins.CreateModelMixin,
