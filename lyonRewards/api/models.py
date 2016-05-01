@@ -46,7 +46,7 @@ class Event(models.Model):
     image_url = models.CharField(max_length=400)
     address = models.CharField(max_length=400)
     tags = models.ManyToManyField('Tag')
-    events = models.ForeignKey(Partner, blank=True, null=True)
+    partner = models.ForeignKey(Partner, blank=True, null=True)
 
     def progress(self, profile):
         qrCodes = CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()
