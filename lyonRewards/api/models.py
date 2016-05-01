@@ -31,7 +31,7 @@ class Event(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
     image_url = models.CharField(max_length=400)
-    adresse = models.CharField(max_length=400)
+    address = models.CharField(max_length=400)
     tags = models.ManyToManyField('Tag')
 
     def progress(self, profile):
