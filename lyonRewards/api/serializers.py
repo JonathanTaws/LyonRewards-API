@@ -3,9 +3,9 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
-
-from api.models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, UserCitizenAct, CitizenAct, CitizenActQRCode
-
+from django.contrib.auth.models import User, Group, Permission
+from api.models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, UserCitizenAct, CitizenAct, \
+    CitizenActQRCode
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -15,9 +15,17 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class EventSerializer(serializers.ModelSerializer):
+    tags = serializers.SlugRelatedField(many=True, queryset=Tag.objects.all(), slug_field='title')
+
     class Meta:
         model = Event
         fields = '__all__'
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ('name')
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -29,12 +37,16 @@ class ProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True)
+
+    #groups = GroupSerializer(source="user.groups", many=True)
+
     last_tfh_points = serializers.IntegerField()
     last_month_points = serializers.IntegerField()
 
     class Meta:
         model = Profile
-        fields = ('id', 'username', 'password','email', 'first_name', 'last_name', 'date_joined', 'global_points', 'current_points', 'last_tfh_points', 'last_month_points')
+        fields = ('id', 'username', 'password', 'email', 'first_name', 'last_name', 'date_joined', 'global_points',
+                  'current_points', 'last_tfh_points', 'last_month_points')
 
     def create(self, validated_data):
         # we define what the serializer must do when creating a profile
@@ -67,7 +79,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class PartnerOfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartnerOffer
@@ -96,5 +107,3 @@ class CitizenActQRCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CitizenActQRCode
         fields = '__all__'
-
-
