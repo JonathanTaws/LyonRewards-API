@@ -48,7 +48,7 @@ class EventViewSet(mixins.CreateModelMixin,
             if type == 'past':
                 events = Event.objects.filter(end_date__lt=datetime.now())
             elif type == 'ongoing':
-                events = Event.objects.filter(start_date__lt=datetime.now()).filter(end_date__gt=datetime.now())
+                events = Event.objects.filter(start_date__lt=datetime.now(), end_date__gt=datetime.now())
             elif type == 'future':
                 events = Event.objects.filter(start_date__gt=datetime.now())
             else:
@@ -121,12 +121,34 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @list_route()
     def ranking(self, request):
-        profiles=Profile.objects.all().order_by('-global_points')
+        profiles = None
+
+        # filtering on existing property
+        if 'time' in request.query_params:
+            time=request.query_params.get('time')
+            if time == 'lastTfh':
+                profiles = sorted(Profile.objects.all(), key=lambda m: m.last_tfh_points, reverse=True)
+            elif time == 'currentMonth':
+                profiles = sorted(Profile.objects.all(), key=lambda m: m.current_month_points, reverse=True)
+            else:
+                return Response({'error': '{0} is not a acceptable time parameter'.format(time)}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        # filtering on parameter
+        elif 'month' in request .query_params:
+            month = int(request.query_params.get('month'))
+            if 1 < month > 12:
+                return Response({'error': 'Month should be in range 1-12 (included)'.format(month)}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            profiles = sorted(Profile.objects.all(), key=lambda m: m.month_points(month), reverse=True)
+
+        #no filtering
+        else:
+            profiles=Profile.objects.all().order_by('-global_points')
+
+        # serialization
         serializer = ProfileSerializer(profiles, many=True)
+
         if 'userId' in request.query_params:
             for index, profile in enumerate(profiles):
-                print(profile.id)
-                print(request.query_params.get('userId'))
                 if profile.id == int(request.query_params.get('userId')):
                     return Response(
                         {'ranking' : serializer.data, 'specified_user_rank': index+1},
@@ -139,7 +161,7 @@ class PartnerOfferViewSet(viewsets.ModelViewSet):
     queryset = PartnerOffer.objects.all()
 
     def retrieve(self, request, pk=None):
-        # we define a custom get in order to return a representation wich is flatten
+        # we define a custom get in order to return a representation which is flatten
         # we find the corresponding partner_offer
         partner_offer = get_object_or_404(PartnerOffer.objects.all(), pk=pk)
 
