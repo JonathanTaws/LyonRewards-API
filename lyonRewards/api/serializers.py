@@ -40,8 +40,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     #groups = GroupSerializer(source="user.groups", many=True)
 
-    last_tfh_points = serializers.IntegerField()
-    last_month_points = serializers.IntegerField()
+    last_tfh_points = serializers.IntegerField(read_only=True)
+    last_month_points = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Profile
