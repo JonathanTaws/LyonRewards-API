@@ -18,7 +18,7 @@ class TagSerializer(serializers.ModelSerializer):
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = ('name',)
+        fields = ('id', 'name')
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -45,7 +45,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ('id', 'username', 'password', 'email', 'first_name', 'last_name', 'date_joined', 'global_points',
-                  'current_points', 'last_tfh_points', 'current_month_points', 'group')
+                  'current_points', 'last_tfh_points', 'current_month_points', 'bike_distance', 'walk_distance', 'tram_distance', 'bus_distance', 'group')
 
     def create(self, validated_data):
         # we define what the serializer must do when creating a profile
