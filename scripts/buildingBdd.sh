@@ -9,18 +9,30 @@ echo Update groups
 x=$(expr $(cat input.cfg | jq '.groups | length') - 1)
 for i in $(seq 0 $x)
 do
-	name=$(cat input.cfg | jq ".groups[$i] | .name")
-	curl --data-urlencode name=$name 'https://lyonrewards.antoine-chabert.fr/api/groups/' 
+	name=$(cat input.cfg | jq ".groups[$i] | .name" | sed s/\"//g)
+	curl --data-urlencode "name=$name" 'https://lyonrewards.antoine-chabert.fr/api/groups/' 
 done
 
 echo Update acts
 x=$(expr $(cat input.cfg | jq '.acts | length') - 1)
 for i in $(seq 0 $x)
 do
-	title=$(cat input.cfg | jq ".acts[$i] | .title")
-	description=$(cat input.cfg | jq ".acts[$i] | .description")
-	points=$(cat input.cfg | jq ".acts[$i] | .points")
-	curl --data-urlencode title=$title&description=$description&points=$points 'https://lyonrewards.antoine-chabert.fr/api/acts/' 
+	type_of_act=$(cat input.cfg | jq ".acts[$i] | .type_of_act" | sed s/\"//g)
+	title=$(cat input.cfg | jq ".acts[$i] | .title" | sed s/\"//g)
+	treasure_hunt=$(cat input.cfg | jq ".acts[$i] | .treasure_hunt" | sed s/\"//g)
+	type=$(cat input.cfg | jq ".acts[$i] | .type" | sed s/\"//g)
+	distance_step=$(cat input.cfg | jq ".acts[$i] | .distance_step" | sed s/\"//g)
+	description=$(cat input.cfg | jq ".acts[$i] | .description" | sed s/\"//g)
+	points=$(cat input.cfg | jq ".acts[$i] | .points" | sed s/\"//g)
+	if [ $type_of_act = "qrcode" ]
+	then
+		url="https://lyonrewards.antoine-chabert.fr/api/acts/?type=qrcode"
+		curl --data-urlencode "title=$title" --data-urlencode "treasure_hunt=$treasure_hunt" --data-urlencode "points=$points" --data-urlencode "description=$description" $url 
+
+	else
+		url="https://lyonrewards.antoine-chabert.fr/api/acts/?type=travel"
+		curl --data-urlencode "title=$title" --data-urlencode "description=$description" --data-urlencode "points=$points" --data-urlencode "distance_step=$distance_step" --data-urlencode "type=$type" $url 
+	fi
 done
 
 echo Update partners
@@ -31,7 +43,7 @@ do
 	description=$(cat input.cfg | jq ".partners[$i] | .description")
 	adress=$(cat input.cfg | jq ".partners[$i] | .points")
 	image_url=$(cat input.cfg | jq ".partners[$i] | .image_url")
-	curl --data-urlencode name=$name&description=$description&adress=$adress&image_url=$image_url 'https://lyonrewards.antoine-chabert.fr/api/partners/' 
+	curl --data-urlencode "name=$name" --data-urlencode "description=$description" --data-urlencode "adress=$adress" --data-urlencode "image_url=$image_url" 'https://lyonrewards.antoine-chabert.fr/api/partners/' 
 done
 
 echo Update tags
@@ -39,7 +51,7 @@ x=$(expr $(cat input.cfg | jq '.tags | length') - 1)
 for i in $(seq 0 $x)
 do
 	title=$(cat input.cfg | jq ".tags[$i] | .title")
-	curl --data-urlencode title=$title 'https://lyonrewards.antoine-chabert.fr/api/tags/' 
+	curl --data-urlencode "title=$title" 'https://lyonrewards.antoine-chabert.fr/api/tags/' 
 done
 
 echo Update users
@@ -57,7 +69,7 @@ do
 	last_tfh_points=$(cat input.cfg | jq ".users[$i] | .last_tfh_points")
 	current_month_points=$(cat input.cfg | jq ".users[$i] | .current_month_points")
 	group=$(cat input.cfg | jq ".users[$i] | .group")
-	curl --data-urlencode username=$username&password=$password&email=$email&first_name=$first_name&last_name=$last_name&date_joined=$date_joined&global_points=$global_points&current_points=$current_points&last_tfh_points=$last_tfh_points&current_month_points=$current_month_points&group=$group 'https://lyonrewards.antoine-chabert.fr/api/users/' 
+	curl --data-urlencode "username=$username" --data-urlencode "password=$password" --data-urlencode "email=$email" --data-urlencode "first_name=$first_name" --data-urlencode "last_name=$last_name" --data-urlencode "date_joined=$date_joined" --data-urlencode "global_points=$global_points" --data-urlencode "current_points=$current_points" --data-urlencode "last_tfh_points=$last_tfh_points" --data-urlencode "current_month_points=$current_month_points" --data-urlencode "group=$group" 'https://lyonrewards.antoine-chabert.fr/api/users/' 
 done
 
 echo Update offers
@@ -68,7 +80,7 @@ do
 	description=$(cat input.cfg | jq ".offers[$i] | .description")
 	points=$(cat input.cfg | jq ".offers[$i] | .points")
 	title=$(cat input.cfg | jq ".offers[$i] | .title")
-	curl --data-urlencode partner=$partner&description=$description&points=$points&title=$title 'https://lyonrewards.antoine-chabert.fr/api/offers/' 
+	curl --data-urlencode "partner=$partner" --data-urlencode "description=$description" --data-urlencode "points=$points" --data-urlencode "title=$title" 'https://lyonrewards.antoine-chabert.fr/api/offers/' 
 done
 
 echo Update events
@@ -86,7 +98,7 @@ do
 	image_url=$(cat input.cfg | jq ".events[$i] | .image_url")
 	address=$(cat input.cfg | jq ".events[$i] | .address")
 	partner=$(cat input.cfg | jq ".events[$i] | .partner")
-	curl --data-urlencode tags=$tags&title=$title&description=$description&publish_date=$publish_date&start_date=$start_date&end_date=$end_date&latitude=$latitude&longitude=$longitude&image_url=$image_url&address=$address&partner=$partner 'https://lyonrewards.antoine-chabert.fr/api/events/' 
+	curl --data-urlencode "tags=$tags" --data-urlencode "title=$title" --data-urlencode "description=$description" --data-urlencode "publish_date=$publish_date" --data-urlencode "start_date=$start_date" --data-urlencode "end_date=$end_date" --data-urlencode "latitude=$latitude" --data-urlencode "longitude=$longitude" --data-urlencode "image_url=$image_url" --data-urlencode "address=$address" --data-urlencode "partner=$partner" 'https://lyonrewards.antoine-chabert.fr/api/events/' 
 done
 
 echo Travail Terminé.
