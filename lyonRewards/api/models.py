@@ -130,7 +130,7 @@ class TreasureHunt(models.Model):
 
 
 class CitizenActQRCode(CitizenAct):
-    treasure_hunt = models.ForeignKey(TreasureHunt, blank=True)
+    treasure_hunt = models.ForeignKey(TreasureHunt)
 
     def __str__(self):
         return "CitizenActQRCode {0}".format(self.title)

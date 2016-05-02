@@ -5,7 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group, Permission
 from api.models import Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, UserCitizenAct, CitizenAct, \
-    CitizenActQRCode
+    CitizenActQRCode, TreasureHunt
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -103,8 +103,14 @@ class CitizenActSerializer(serializers.ModelSerializer):
         model = CitizenAct
         fields = '__all__'
 
+class TreasureHuntSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TreasureHunt
+        fields = '__all__'
 
 class CitizenActQRCodeSerializer(serializers.ModelSerializer):
+    treasure_hunt = serializers.PrimaryKeyRelatedField(queryset=TreasureHunt.objects.all())
     class Meta:
         model = CitizenActQRCode
         fields = '__all__'
+
