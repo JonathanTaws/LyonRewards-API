@@ -178,9 +178,37 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         {'ranking': serializer.data, 'specified_user_rank': index + 1},
                         status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    @detail_route()
-    def history(self, request):
-        pass
+
+    @detail_route(methods=['get'])
+    def history(self, request, *args, **kwargs):
+        user_citizen_acts = UserCitizenAct.objects.filter(profile=self.get_object()).order_by('date')
+        serializer = UserCitizenActSerializer(user_citizen_acts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @detail_route(methods=['get'])
+    def travelprogress(self, request, *args, **kwargs):
+        bike_act = CitizenActTravel.objects.get(type='bike')
+        bike_progress = ((self.get_object().bike_distance%bike_act.distance_step)/bike_act.distance_step) if bike_act.distance_step != 0 else 0
+
+        walk_act =  CitizenActTravel.objects.get(type='walk')
+        walk_progress = ((self.get_object().walk_distance % walk_act.distance_step) / walk_act.distance_step) if walk_act.distance_step != 0 else 0
+
+        tram_act = CitizenActTravel.objects.get(type='tram')
+        tram_progress = ((self.get_object().tram_distance % tram_act.distance_step) / tram_act.distance_step) if tram_act.distance_step != 0 else 0
+
+        bus_act = CitizenActTravel.objects.get(type='bus')
+        bus_progress = ((self.get_object().bus_distance % bus_act.distance_step) / bus_act.distance_step) if bus_act.distance_step != 0 else 0
+
+        dict_return = {
+            'bike_progress' : bike_progress,
+            'walk_progress': walk_progress,
+            'tram_progress': tram_progress,
+            'bus_progress': bus_progress
+        }
+        
+        return Response(dict_return, status=status.HTTP_200_OK)
+
+
 
     @detail_route(methods=['post'])
     def travel(self, request, *args, **kwargs):
