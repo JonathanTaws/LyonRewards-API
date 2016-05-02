@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
-from api.machine_learning.transport_predictor import predict
+from transport_predictor import predict
 
 from api.models import (
     Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt,
@@ -243,7 +243,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
         #####give it to random forest######
         transports = ["bike", "walk", "tram", "bus"]
 
-        dico_random_forest = predict(request.data)
+        from random import randint
+
+        #dico_random_forest = predict(request.data)
+        dico_random_forest = {"type": transports[randint(0,3)], "distance":90}
 
         citizen_act_travel = CitizenActTravel.objects.get(type=dico_random_forest['type'])
 
