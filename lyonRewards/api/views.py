@@ -15,7 +15,6 @@ from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
 
-
 from api.models import (
     Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt,
     UserPartnerOffer, UserCitizenAct, CitizenActTravel)
@@ -41,9 +40,9 @@ class TreasureHuntViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UserCitizenActViewSet(mixins.RetrieveModelMixin,
-                    mixins.ListModelMixin,
-                    mixins.DestroyModelMixin,
-                    viewsets.GenericViewSet):
+                            mixins.ListModelMixin,
+                            mixins.DestroyModelMixin,
+                            viewsets.GenericViewSet):
     serializer_class = UserCitizenActSerializer
     queryset = UserCitizenAct.objects.all()
 
@@ -163,11 +162,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         # no filtering
         else:
-            profiles=Profile.objects.all().order_by('-global_points')
+            profiles = Profile.objects.all().order_by('-global_points')
 
-        #Returned set limitation
+        # Returned set limitation
         if 'limit' in request.query_params:
-            profiles=profiles[:int(request.query_params['limit'])]
+            profiles = profiles[:int(request.query_params['limit'])]
 
         # serialization
         serializer = ProfileSerializer(profiles, many=True)
@@ -194,8 +193,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
             '''
             for i in range(number_passed):
                 user_citizen_act_travel = UserCitizenAct(profile=profile, citizen_act=citizen_act_travel,
-                                                               date=datetime.now())
-                citizen_acts.append(CitizenActTravelSerializer(user_citizen_act_travel).data)
+                                                         date=datetime.now())
+                user_citizen_act_travel.save()
+                citizen_acts.append(CitizenActTravelSerializer(citizen_act_travel).data)
 
         # we retrieve the json given by the mobile user, and give it to random forest
         profile = self.get_object()
@@ -204,7 +204,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
         #####give it to random forest######
         dico_random_forest = {"type": "bike", "distance": 120}
 
-        citizen_act_travel = CitizenActTravel.object.all(type=dico_random_forest['type'])
+        citizen_act_travel = CitizenActTravel.objects.get(type=dico_random_forest['type'])
+
+        if citizen_act_travel == None:
+            return Response({"Error": "Please create in database the act travel"}, status=status.HTTP_400_BAD_REQUEST)
+
 
         # we create the citizen acts if needed
         newTotalKm = 0
@@ -247,9 +251,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
             profile.bike_bus += dico_random_forest['distance']
             newTotalKm = profile.bus_distance
+        else:
+            return Response({"Error": "Type from random forest incorrect"}, status=status.HTTP_400_BAD_REQUEST)
 
         for citizen_act in citizen_acts:
-            points_granted = number_passed*citizen_act.points
+            points_granted = number_passed * citizen_act['points']
 
         profile.global_points += points_granted
         profile.current_points += points_granted
@@ -262,7 +268,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             "citizen_acts": citizen_acts
         }
 
-        return Response(json.dumps(dict_return))
+        return Response(dict_return)
 
 
 class PartnerOfferViewSet(viewsets.ModelViewSet):
@@ -323,11 +329,11 @@ class CitizenActViewSet(mixins.ListModelMixin,
     def retrieve(self, request, pk=None, *args, **kwargs):
         serializer = None
 
-        #type parameter
+        # type parameter
         if 'type' in request.query_params:
             type = request.query_params['type']
 
-            #type CitizenActQRCode
+            # type CitizenActQRCode
             if type == 'qrcode':
                 try:
                     serializer = CitizenActQRCodeSerializer(self.get_object().citizenactqrcode)
@@ -336,7 +342,7 @@ class CitizenActViewSet(mixins.ListModelMixin,
                                     status=status.HTTP_400_BAD_REQUEST)
                 s_dict = dict(serializer.data)
 
-                #add completion if userId specified
+                # add completion if userId specified
                 if 'userId' in request.query_params:
 
                     try:
@@ -350,15 +356,16 @@ class CitizenActViewSet(mixins.ListModelMixin,
                         s_dict['completed'] = False
                 return Response(s_dict, status=status.HTTP_200_OK)
 
-            #CitizenActTravel type
+            # CitizenActTravel type
             if type == 'travel':
                 try:
                     serializer = CitizenActTravelSerializer(self.get_object().citizenacttravel)
                 except CitizenActTravel.DoesNotExist:
-                    return Response({'Error' : 'The requested CitizenAct is not of the specified type'}, status = status.HTTP_400_BAD_REQUEST)
+                    return Response({'Error': 'The requested CitizenAct is not of the specified type'},
+                                    status=status.HTTP_400_BAD_REQUEST)
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                return Response({'Error' : 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response({'Error': 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         else:
             return Response(CitizenActSerializer(self.get_object()).data, status=status.HTTP_200_OK)
@@ -367,20 +374,19 @@ class CitizenActViewSet(mixins.ListModelMixin,
         try:
             type = request.query_params['type']
         except KeyError:
-            return Response({'Error' : 'type specification missing'}, status = status.HTTP_428_PRECONDITION_REQUIRED)
+            return Response({'Error': 'type specification missing'}, status=status.HTTP_428_PRECONDITION_REQUIRED)
         if type == 'qrcode':
             serializer = CitizenActQRCodeSerializer(data=request.data)
         elif type == 'travel':
             serializer = CitizenActTravelSerializer(data=request.data)
         else:
-            return Response({'Error' : 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response({'Error': 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
-
 
     def update(self, request, pk=None):
         try:
@@ -391,9 +397,10 @@ class CitizenActViewSet(mixins.ListModelMixin,
                 elif type == 'travel':
                     serializer = CitizenActTravelSerializer(self.get_object().citizenacttravel, data=request.data)
                 else:
-                    return Response({'Error' : 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                    return Response({'Error': 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
             except ObjectDoesNotExist:
-                return Response({'Error' : 'The CitizenAct is not of the specified type'}, status = status.HTTP_400_BAD_REQUEST)
+                return Response({'Error': 'The CitizenAct is not of the specified type'},
+                                status=status.HTTP_400_BAD_REQUEST)
         except KeyError:
             serializer = CitizenActSerializer(self.get_object(), data=request.data)
 
