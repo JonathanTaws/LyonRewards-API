@@ -182,6 +182,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['get'])
     def history(self, request, *args, **kwargs):
         user_citizen_acts = UserCitizenAct.objects.filter(profile=self.get_object()).order_by('date')
+
+        # Returned set limitation
+        if 'limit' in request.query_params:
+            user_citizen_acts = user_citizen_acts[:int(request.query_params['limit'])]
+
         serializer = UserCitizenActSerializer(user_citizen_acts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
