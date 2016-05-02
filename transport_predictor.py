@@ -1,25 +1,37 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-from sklearn.ensemble import RandomForestClassifier 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.externals import joblib
 import os
 import msvcrt as m
 from datetime import datetime
 from sets import Set
 from math import *
+import cPickle
 
 DATALOC = u"../dataset"
+DATALYON = u"../datalyon"
+
 TRANSPORT = {
 	"unknown" : -1,
 	"walk" : 0.0,
 	"bike" : 1.0,
 	"car" : 2.0,
 	"taxi" : 2.0,
-	"subway" : 3.0,
-	"bus" : 4.0
+	"bus" : 3.0
 }
 
-REVERSE = ["walk", "bike", "car", "subway", "bus"]
+TRANSPORT_LYON = {
+	"walk" : 0.0,
+	"bike" : 1.0,
+	"bus" : 2.0,
+	"tram" : 3.0,
+	"car" : 4.0
+}
+
+REVERSE = ["walk", "bike", "car", "bus"]
+REVERSE_LYON = ["walk", "bike", "bus", "tram", "car"]
 
 log_last = None
 log_list = []
@@ -39,6 +51,15 @@ def dist(gps1, gps2):
 	d = 6372.8 * 1000 * c
 	return d
 
+#Haversine FTW
+def dist_lyon(gps1, gps2):
+	dlon = radians(gps2["longitude"] - gps1["longitude"])
+	dlat = radians(gps2["latitude"] - gps1["latitude"])
+	a = (sin(dlat/2))**2 + cos(radians(gps1["latitude"])) * cos(radians(gps2["latitude"])) * (sin(dlon/2))**2 
+	c = 2 * atan2(sqrt(a), sqrt(1-a))
+	d = 6372.8 * 1000 * c
+	return d
+
 #Great circle magic bearing formulas
 def angle_to_north(gps1, gps2):
     dlon = radians(gps2["lon"] - gps1["lon"])
@@ -46,6 +67,160 @@ def angle_to_north(gps1, gps2):
     x = cos(radians(gps1["lat"])) * sin(radians(gps2["lat"])) - sin(radians(gps1["lat"]))*cos(radians(gps2["lat"]))*cos(dlon)
     brng = (degrees(atan2(y,x)) + 360) % 360
     return brng
+
+# ------------------------------------------------------------
+# 						PRODUCTION - LYON
+# ------------------------------------------------------------
+
+#Speed unit mode is eitheir m/s or km/h
+def compute_features(gps_log, accel_log, speed_unit_mode):
+	#1st feature : average speed
+	speeds = [0.0] * len(gps_log)
+	speed_sum = 0.0
+	for index in range(1, len(gps_log)):
+		if(gps_log[index]["speed"]=="NA"):
+			if((gps_log[index]["timestamp"] - gps_log[index-1]["timestamp"]).total_seconds())==0:
+				speeds[index] = 0
+			else:
+				speeds[index] = 3.6 * dist_lyon(gps_log[index], gps_log[index-1])/ \
+								((gps_log[index]["timestamp"] - gps_log[index-1]["timestamp"]).total_seconds())
+		else:
+			speeds[index] = float(gps_log[index]["speed"])
+			if(speed_unit_mode=="m/s"):
+				speeds[index] = 3.6 * speeds[index]
+		speed_sum += speeds[index]
+	avg_speed = speed_sum / (len(gps_log)-1)
+	return [avg_speed]
+
+def train():
+	subpath = DATALYON + "/logs"
+	logs = os.listdir(subpath)
+
+	with open(DATALYON + "/modes.txt") as flabel:
+		for line in flabel:
+			attributes = line.rstrip().split("=")
+			label_dict[attributes[0]] = TRANSPORT_LYON[attributes[1]]
+
+	for logpath in logs:
+		with open(subpath + "/" + logpath) as fdata:
+			column_mode = -1
+			speed_unit_mode = "?"
+			gps_log = []
+			accel_log = []
+			for line_number, line in enumerate(fdata):
+
+				if line_number==1:
+					names = line.rstrip().split(";")
+					column_mode = len(names)
+					detect_speed_unit = line.find("LOCALISATION Vitesse")
+					if(detect_speed_unit==-1):
+						detect_speed_unit = line.find("LOCATION Speed") + len("LOCATION Speed")
+					else:
+						detect_speed_unit += len("LOCALISATION Vitesse")
+					if(line[detect_speed_unit+3]=="m"):
+						speed_unit_mode = "m/s"
+					else:
+						speed_unit_mode = "km/h"
+
+				elif line_number>1:
+					attributes = line.rstrip().split(";")
+					if(column_mode==13):
+						#If low on satellites, skip object
+						nb_satellites = int(attributes[10].split("/")[0])
+						if(nb_satellites==0):
+							continue
+						gps_object = {
+							"latitude" : float(attributes[3]),
+							"longitude" : float(attributes[4]),
+							"speed" : "NA" if attributes[7] == "" else attributes[7],
+							"timestamp" : datetime.strptime(attributes[12][:-4], "%Y-%m-%d %H:%M:%S")
+						}
+						accel_object = {
+							"x" : attributes[0],
+							"y" : attributes[1],
+							"z" : attributes[2],
+							"timestamp" : datetime.strptime(attributes[12][:-4], "%Y-%m-%d %H:%M:%S")
+						}
+						gps_log.append(gps_object)
+						accel_log.append(accel_object)
+					elif(column_mode==22):
+						#If low on satellites, skip object
+						nb_satellites = int(attributes[19].split("/")[0])
+						if(nb_satellites==0):
+							continue
+						gps_object = {
+							"latitude" : float(attributes[12]),
+							"longitude" : float(attributes[13]),
+							"speed" : "NA" if attributes[16] == "" else attributes[16],
+							"timestamp" : datetime.strptime(attributes[21][:-4], "%Y-%m-%d %H:%M:%S")
+						}
+						accel_object = {
+							"x" : attributes[0],
+							"y" : attributes[1],
+							"z" : attributes[2],
+							"timestamp" : datetime.strptime(attributes[21][:-4], "%Y-%m-%d %H:%M:%S")
+						}
+						gps_log.append(gps_object)
+						accel_log.append(accel_object)
+
+			#Remove 10% unsure data from each side
+			gps_log = gps_log[len(gps_log)/10:(len(gps_log)-(len(gps_log)/10))]
+			accel_log = accel_log[len(accel_log)/10:(len(accel_log)-(len(accel_log)/10))]
+
+			#File eaten in gps_log and accel_log, now we can compute features
+			features = compute_features(gps_log, accel_log, speed_unit_mode)
+			print features[0], " km/h is mode ", REVERSE_LYON[int(label_dict[logpath[:-4]])]
+			X.append(features)
+			Y.append(label_dict[logpath[:-4]])
+
+	#Now train the model !
+	forest = RandomForestClassifier(n_estimators = 100)
+	forest.fit(X,Y)
+	Yresult = forest.predict(X)
+	counter = 0
+	for index in range(0, len(Yresult)):
+		if(Yresult[index] == Y[index]):
+			counter = counter + 1
+	print "Done training the forest !"
+	print "Statistics, success : ", counter, " / ", len(Yresult)
+	print "-----------------------------------------------------"
+	with open('rf.pkl', 'wb') as f:
+		cPickle.dump(forest, f)
+
+def predict(data):
+	Xdata = []
+	with open('rf.pkl', 'rb') as f:
+		forest = cPickle.load(f)
+	speed_unit_mode = "m/s"
+	gps_log = data["gps"]
+	accel_log = data["accel"]
+	total_km = 0.0
+
+	#Data needs some adaptation dude
+	for accel_object in accel_log:
+		accel_object["timestamp"] = datetime.fromtimestamp(float(accel_object["timestamp"]))
+
+	for index in range(len(gps_log)):
+		if(gps_log[index]["speed"] == "-1"):
+			gps_log[index]["speed"] = "NA"
+		gps_log[index]["latitude"] = float(gps_log[index]["latitude"])
+		gps_log[index]["longitude"] = float(gps_log[index]["longitude"])
+		gps_log[index]["timestamp"] = datetime.fromtimestamp(float(gps_log[index]["timestamp"]))
+		if(index>0):
+			total_km += (dist_lyon(gps_log[index], gps_log[index-1]))/1000
+
+	Xdata.append(compute_features(gps_log, accel_log, speed_unit_mode))
+	result = {
+		"mode" : REVERSE_LYON[int(forest.predict(Xdata))],
+		"distance" : total_km
+	}
+	print result
+	return result
+
+
+# ------------------------------------------------------------
+# 						CHINA TRAINING
+# ------------------------------------------------------------
 
 def analyse_data():
 	print "Data read successfully !"
@@ -165,6 +340,41 @@ def parse_file(fdata):
 		
 #Get all PLT logs and open them, along with the associated label file
 def main():
+	train()
+	#Demo
+	predict(
+		{
+			"gps" : [
+				{
+					"latitude" : "45.50",
+					"longitude" : "4.50",
+					"speed" : "45.50",
+					"timestamp" : "1462212262"
+				},
+				{
+					"latitude" : "45.80",
+					"longitude" : "4.50",
+					"speed" : "45.50",
+					"timestamp" : "1462212266"
+				}
+			],
+			"accel" : [
+				{
+					"x" : "1.59849",
+					"y" : "2.54949",
+					"z" : "7.595495949",
+					"timestamp" : "1462212262"
+				},
+				{
+					"x" : "4.5997877",
+					"y" : "8.54949",
+					"z" : "0.59949",
+					"timestamp" : "1462212266"
+				}
+			]
+		}
+	)
+	""" OLD : TRAIN WITH CHINA DATA
 	subdirs = os.listdir(DATALOC)
 	for subpath in subdirs:
 		subpath = DATALOC + "/" + subpath + "/"
@@ -176,6 +386,7 @@ def main():
 				parse_file(fdata)
 		print "Subfolder eaten : ", subpath, " - current total : ", len(log_list), " - ", meta_counter
 	analyse_data()
+	"""
 
 if __name__ == "__main__":
 	main()
