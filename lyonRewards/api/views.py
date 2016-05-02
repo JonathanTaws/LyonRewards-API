@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
 from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.decorators import detail_route,list_route, api_view
+from rest_framework.decorators import detail_route, list_route, api_view
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
@@ -29,13 +29,16 @@ class TagViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
+
 class GroupViewSet(viewsets.ModelViewSet):
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
 
+
 class TreasureHuntViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TreasureHuntSerializer
     queryset = TreasureHunt.objects.all()
+
 
 class UserCitizenActViewSet(mixins.RetrieveModelMixin,
                     mixins.ListModelMixin,
@@ -133,7 +136,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
-    #permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
 
     @list_route()
     def ranking(self, request):
@@ -141,20 +144,24 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         # filtering on existing property
         if 'time' in request.query_params:
-            time=request.query_params['time']
+            time = request.query_params['time']
             if time == 'lastTfh':
                 profiles = sorted(Profile.objects.all(), key=lambda m: m.last_tfh_points, reverse=True)
             elif time == 'currentMonth':
                 profiles = sorted(Profile.objects.all(), key=lambda m: m.current_month_points, reverse=True)
             else:
-                return Response({'error': '{0} is not a acceptable time parameter'.format(time)}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response({'error': '{0} is not a acceptable time parameter'.format(time)},
+                                status=status.HTTP_406_NOT_ACCEPTABLE)
+
         # filtering on parameter
-        elif 'month' in request .query_params:
+        elif 'month' in request.query_params:
             month = int(request.query_params['month'])
             if 1 < month > 12:
-                return Response({'error': 'Month should be in range 1-12 (included)'.format(month)}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response({'error': 'Month should be in range 1-12 (included)'.format(month)},
+                                status=status.HTTP_406_NOT_ACCEPTABLE)
             profiles = sorted(Profile.objects.all(), key=lambda m: m.month_points(month), reverse=True)
-        #no filtering
+
+        # no filtering
         else:
             profiles=Profile.objects.all().order_by('-global_points')
 
@@ -169,13 +176,96 @@ class ProfileViewSet(viewsets.ModelViewSet):
             for index, profile in enumerate(profiles):
                 if profile.id == int(request.query_params['userId']):
                     return Response(
-                        {'ranking' : serializer.data, 'specified_user_rank': index+1},
+                        {'ranking': serializer.data, 'specified_user_rank': index + 1},
                         status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
     @detail_route()
     def history(self, request):
         pass
+
+    @detail_route(methods=['post'])
+    def travel(self, request, *args, **kwargs):
+        def number_times_step_passed(step, current_distance, total_distance):
+            '''
+            :return the number of times the step is passed
+            '''
+            return int(total_distance % step + current_distance / step)
+
+        def create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel):
+            '''
+            Create user citizen
+            '''
+            for i in range(number_passed):
+                user_citizen_act_travel = UserCitizenAct(profile=profile, citizen_act=citizen_act_travel,
+                                                               date=datetime.now())
+                citizen_acts.append(CitizenActTravelSerializer(user_citizen_act_travel).data)
+
+        # we retrieve the json given by the mobile user, and give it to random forest
+        profile = self.get_object()
+        data = request.data
+
+        #####give it to random forest######
+        dico_random_forest = {"type": "bike", "distance": 120}
+
+        citizen_act_travel = CitizenActTravel.object.all(type=dico_random_forest['type'])
+
+        # we create the citizen acts if needed
+        newTotalKm = 0
+        citizen_acts = []
+        number_passed = 0
+
+        if dico_random_forest['type'] == "bike":
+            # if we passed at least one time the step
+            number_passed = number_times_step_passed(citizen_act_travel.distance_step, dico_random_forest['distance'],
+                                                     profile.bike_distance)
+            if number_passed > 0:
+                create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
+
+            profile.bike_distance += dico_random_forest['distance']
+            newTotalKm = profile.bike_distance
+
+        elif dico_random_forest['type'] == "walk":
+            number_passed = number_times_step_passed(citizen_act_travel.distance_step, dico_random_forest['distance'],
+                                                     profile.walk_distance)
+            if number_passed > 0:
+                create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
+
+            profile.bike_walk += dico_random_forest['distance']
+            newTotalKm = profile.walk_distance
+
+        elif dico_random_forest['type'] == "tram":
+            number_passed = number_times_step_passed(citizen_act_travel.distance_step, dico_random_forest['distance'],
+                                                     profile.tram_distance)
+            if number_passed > 0:
+                create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
+
+            profile.bike_tram += dico_random_forest['distance']
+            newTotalKm = profile.tram_distance
+
+        elif dico_random_forest['type'] == "bus":
+            number_passed = number_times_step_passed(citizen_act_travel.distance_step, dico_random_forest['distance'],
+                                                     profile.tram_distance)
+            if number_passed > 0:
+                create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
+
+            profile.bike_bus += dico_random_forest['distance']
+            newTotalKm = profile.bus_distance
+
+        for citizen_act in citizen_acts:
+            points_granted = number_passed*citizen_act.points
+
+        profile.global_points += points_granted
+        profile.current_points += points_granted
+
+        dict_return = {
+            "mode": dico_random_forest['type'],
+            "new_total_km": newTotalKm,
+            "step_success": citizen_act_travel.distance_step,
+            "points_granted": points_granted,
+            "citizen_acts": citizen_acts
+        }
+
+        return Response(json.dumps(dict_return))
 
 
 class PartnerOfferViewSet(viewsets.ModelViewSet):
@@ -221,6 +311,7 @@ class PartnerViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['get'])
     def offers(self, request, *args, **kwargs):
+        # TODO : add exception in case id doesn't exist
         offers_list = self.get_object().partneroffer_set.all()
         serializer = PartnerOfferSerializer(offers_list, many=True)
         return Response(serializer.data)
@@ -244,11 +335,13 @@ class CitizenActViewSet(mixins.ListModelMixin,
                 try:
                     serializer = CitizenActQRCodeSerializer(self.get_object().citizenactqrcode)
                 except CitizenActQRCode.DoesNotExist:
-                    return Response({'Error' : 'The requested CitizenAct is not of the specified type'}, status = status.HTTP_400_BAD_REQUEST)
+                    return Response({'Error': 'The requested CitizenAct is not of the specified type'},
+                                    status=status.HTTP_400_BAD_REQUEST)
                 s_dict = dict(serializer.data)
 
                 #add completion if userId specified
                 if 'userId' in request.query_params:
+
                     try:
                         completion = (
                             UserCitizenAct.objects.get(
@@ -291,6 +384,7 @@ class CitizenActViewSet(mixins.ListModelMixin,
         else:
             return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
 
+
     def update(self, request, pk=None):
         try:
             type = request.query_params['type']
@@ -318,7 +412,7 @@ class CitizenActViewSet(mixins.ListModelMixin,
             event = self.get_object().citizenactqrcode.treasure_hunt.event
             serializer = EventSerializer(event)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except ObjectDoesNotExist :
+        except ObjectDoesNotExist:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -350,7 +444,8 @@ def debit(request, userId, offerId):
         # we first retireve the token given in paramaters
         token_mobile = request.query_params.get('token_mobile')
 
-        headers = {"Authorization": "key=AIzaSyDTDxOSbGp9vNX7dWc5PLmzKz55S_0Z_M8", 'Content-type': 'application/json', 'Accept': 'text/plain'}
+        headers = {"Authorization": "key=AIzaSyDTDxOSbGp9vNX7dWc5PLmzKz55S_0Z_M8", 'Content-type': 'application/json',
+                   'Accept': 'text/plain'}
         data = {
             "data": {
                 "score": u"{}".format(offer.points),
@@ -363,7 +458,8 @@ def debit(request, userId, offerId):
         }
 
         try:
-            request_google_gcm = requests.post('https://gcm-http.googleapis.com/gcm/send', data=json.dumps(data), headers=headers)
+            request_google_gcm = requests.post('https://gcm-http.googleapis.com/gcm/send', data=json.dumps(data),
+                                               headers=headers)
         except:
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
