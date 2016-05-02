@@ -22,18 +22,19 @@ class Tag(models.Model):
     def __unicode__(self):
         return u"{0}".format(self.title)
 
+
 class Partner(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     address = models.TextField()
     image_url = models.CharField(max_length=400)
 
-
     def __str__(self):
         return "{0}".format(self.name)
 
     def __unicode__(self):
         return u"{0}".format(self.name)
+
 
 class Event(models.Model):
     title = models.CharField(max_length=100, unique=True)
@@ -49,15 +50,14 @@ class Event(models.Model):
     partner = models.ForeignKey(Partner, blank=True, null=True)
 
     def progress(self, profile):
-        qrCodes = CitizenActQRCode.objects.filter(treasure_hunt__event = self).count()
+        qrCodes = CitizenActQRCode.objects.filter(treasure_hunt__event=self).count()
         if qrCodes == 0:
             return 0
         return (
             CitizenActQRCode.objects.
-            filter(treasure_hunt__event = self).
-            filter(usercitizenact__profile = profile).
-            count()/float(qrCodes))
-
+            filter(treasure_hunt__event=self).
+            filter(usercitizenact__profile=profile).
+            count() / float(qrCodes))
 
 
 class Profile(models.Model):
@@ -78,33 +78,55 @@ class Profile(models.Model):
         return u"Profil de {0}".format(self.user.username)
 
     @property
+    def bike_points(self):
+        sum = (CitizenActTravel.objects.filter(usercitizenact__profile=self, type='bike') \
+               .aggregate(bike_points=models.Sum('points')))
+        return sum.get('bike_points') if sum.get('bike_points') else 0
+
+    @property
+    def walk_points(self):
+        pass
+
+    @property
+    def tram_points(self):
+        pass
+
+    @property
+    def bus_points(self):
+        sum = (CitizenActTravel.objects.filter(usercitizenact__profile=self, type='bus') \
+               .aggregate(bus_points=models.Sum('points')))
+        return sum.get('bus_points') if sum.get('bus_points') else 0
+
+    @property
     def last_tfh_points(self):
         date_from = datetime.now() - timedelta(days=1)
         sum = (
             CitizenAct.objects
-            .filter(usercitizenact__profile=self, usercitizenact__date__gte=date_from)
-            .aggregate(last_tfh_points=models.Sum('points')))
+                .filter(usercitizenact__profile=self, usercitizenact__date__gte=date_from)
+                .aggregate(last_tfh_points=models.Sum('points')))
         return sum.get('last_tfh_points') if sum.get('last_tfh_points') else 0
 
     @property
     def current_month_points(self):
         sum = (
             CitizenAct.objects
-                .filter(usercitizenact__profile=self, usercitizenact__date__month = datetime.now().month)
+                .filter(usercitizenact__profile=self, usercitizenact__date__month=datetime.now().month)
                 .aggregate(current_month_points=models.Sum('points')))
         return sum.get('current_month_points') if sum.get('current_month_points') else 0
 
     def month_points(self, month):
         sum = (
             CitizenAct.objects
-                .filter(usercitizenact__profile=self, usercitizenact__date__month = month)
+                .filter(usercitizenact__profile=self, usercitizenact__date__month=month)
                 .aggregate(month_points=models.Sum('points')))
         return sum.get('month_points') if sum.get('month_points') else 0
 
+
 @receiver(post_delete, sender=Profile)
 def delete_user(sender, instance, **kwargs):
-    #we destroy the user before deleting the profile
+    # we destroy the user before deleting the profile
     instance.user.delete()
+
 
 @receiver(post_save, sender=User)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
@@ -155,7 +177,6 @@ class CitizenActTravel(CitizenAct):
         return u"CitizenActTravel  {0}".format(self.title)
 
 
-
 class UserCitizenAct(models.Model):
     date = models.DateTimeField(default=now, verbose_name="Citizen act date")
     profile = models.ForeignKey(Profile)
@@ -166,9 +187,6 @@ class UserCitizenAct(models.Model):
 
     def __unicode__(self):
         return u"UserCitizenAct {0}".format(self.date)
-
-
-
 
 
 class PartnerOffer(models.Model):
@@ -194,5 +212,3 @@ class UserPartnerOffer(models.Model):
 
     def __unicode__(self):
         return u"UserPartnerOffer {0}".format(self.date)
-
-

@@ -6,7 +6,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User, Group, Permission
 from api.models import (
     Event, Tag, Profile, PartnerOffer, Partner, UserPartnerOffer, UserCitizenAct, CitizenAct,
-    CitizenActQRCode, TreasureHunt, CitizenActTravel )
+    CitizenActQRCode, TreasureHunt, CitizenActTravel)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -45,7 +45,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ('id', 'username', 'password', 'email', 'first_name', 'last_name', 'date_joined', 'global_points',
-                  'current_points', 'last_tfh_points', 'current_month_points', 'bike_distance', 'walk_distance', 'tram_distance', 'bus_distance', 'group')
+                  'current_points', 'last_tfh_points', 'current_month_points', 'bike_distance', 'walk_distance',
+                  'tram_distance', 'bus_distance', 'group', 'bike_points', 'walk_points', 'tram_points', 'bus_points')
 
     def create(self, validated_data):
         # we define what the serializer must do when creating a profile
@@ -113,25 +114,31 @@ class CitizenActSerializer(serializers.ModelSerializer):
         model = CitizenAct
         fields = '__all__'
 
+
 class TreasureHuntSerializer(serializers.ModelSerializer):
     class Meta:
         model = TreasureHunt
         fields = '__all__'
 
+
 class CitizenActQRCodeSerializer(serializers.ModelSerializer):
     treasure_hunt = serializers.PrimaryKeyRelatedField(queryset=TreasureHunt.objects.all())
+
     class Meta:
         model = CitizenActQRCode
         fields = '__all__'
+
 
 class CitizenActTravelSerializer(serializers.ModelSerializer):
     class Meta:
         model = CitizenActTravel
         fields = '__all__'
 
+
 class UserCitizenActSerializer(serializers.ModelSerializer):
     profile = serializers.PrimaryKeyRelatedField(queryset=Profile.objects.all())
     citizen_act = serializers.PrimaryKeyRelatedField(queryset=CitizenAct.objects.all())
+
     class Meta:
         model = UserCitizenAct
         fields = '__all__'

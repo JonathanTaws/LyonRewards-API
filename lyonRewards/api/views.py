@@ -188,7 +188,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             '''
             :return the number of times the step is passed
             '''
-            return int(total_distance % step + current_distance / step)
+            return int((total_distance % step + current_distance) / step)
 
         def create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel):
             '''
@@ -223,8 +223,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         if dico_random_forest['type'] == "bike":
             # if we passed at least one time the step
+            print(number_passed)
             number_passed = number_times_step_passed(citizen_act_travel.distance_step, dico_random_forest['distance'],
                                                      profile.bike_distance)
+
+            print(number_passed)
+
             if number_passed > 0:
                 create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
 
