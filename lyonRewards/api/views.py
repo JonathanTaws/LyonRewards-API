@@ -173,6 +173,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @detail_route()
+    def history(self, request):
+        pass
+
 
 class PartnerOfferViewSet(viewsets.ModelViewSet):
     serializer_class = PartnerOfferSerializer
