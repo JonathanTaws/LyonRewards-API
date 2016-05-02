@@ -13,10 +13,11 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = '__all__'
 
+
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields =('name',)
+        fields = ('name',)
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -36,8 +37,6 @@ class ProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True)
-
-    
 
     last_tfh_points = serializers.IntegerField(read_only=True)
     current_month_points = serializers.IntegerField(read_only=True)
@@ -66,17 +65,15 @@ class ProfileSerializer(serializers.ModelSerializer):
         try:
             user_data = validated_data.pop('user')
 
-            #take caution, it differs in python 3.x and 2.x !
-            for key,data in user_data.items():
+            # take caution, it differs in python 3.x and 2.x !
+            for key, data in user_data.items():
                 if key == "password":
                     instance.user.set_password(data)
                 else:
                     setattr(instance.user, key, data)
+            instance.user.save()
         except KeyError:
             pass
-
-
-        instance.user.save()
 
         '''
         instance.user.username = user_data['username']
@@ -87,9 +84,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         instance.user.save()
         '''
 
-        super(ProfileSerializer, self).update(instance, validated_data)
+        profile = super(ProfileSerializer, self).update(instance, validated_data)
 
-        return instance
+        return profile
 
 
 class PartnerOfferSerializer(serializers.ModelSerializer):
