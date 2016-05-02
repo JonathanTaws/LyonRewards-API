@@ -85,11 +85,15 @@ class Profile(models.Model):
 
     @property
     def walk_points(self):
-        pass
+        sum = (CitizenActTravel.objects.filter(usercitizenact__profile=self, type='walk') \
+               .aggregate(bike_points=models.Sum('points')))
+        return sum.get('walk_points') if sum.get('walk_points') else 0
 
     @property
     def tram_points(self):
-        pass
+        sum = (CitizenActTravel.objects.filter(usercitizenact__profile=self, type='tram') \
+               .aggregate(bike_points=models.Sum('points')))
+        return sum.get('tram_points') if sum.get('tram_points') else 0
 
     @property
     def bus_points(self):
