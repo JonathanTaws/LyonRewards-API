@@ -66,10 +66,10 @@ class Profile(models.Model):
     current_points = models.PositiveIntegerField(default=0)
     group = models.ForeignKey(Group, blank=True, null=True)
 
-    bike_distance = models.PositiveIntegerField(default=0)
-    walk_distance = models.PositiveIntegerField(default=0)
-    tram_distance = models.PositiveIntegerField(default=0)
-    bus_distance = models.PositiveIntegerField(default=0)
+    bike_distance = models.FloatField(default=0)
+    walk_distance = models.FloatField(default=0)
+    tram_distance = models.FloatField(default=0)
+    bus_distance = models.FloatField(default=0)
 
     def __str__(self):
         return "Profil de {0}".format(self.user.username)
