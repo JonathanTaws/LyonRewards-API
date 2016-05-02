@@ -211,7 +211,7 @@ def predict(data):
 
 	Xdata.append(compute_features(gps_log, accel_log, speed_unit_mode))
 	result = {
-		"mode" : REVERSE_LYON[int(forest.predict(Xdata))],
+		"type" : REVERSE_LYON[int(forest.predict(Xdata))],
 		"distance" : total_km
 	}
 	print result
