@@ -22,7 +22,7 @@ from api.models import (
 from api.serializers import (
     TagSerializer, EventSerializer, ProfileSerializer, PartnerOfferSerializer, PartnerSerializer,
     CitizenActSerializer, CitizenActQRCodeSerializer, GroupSerializer, TreasureHuntSerializer,
-    UserCitizenActSerializer, CitizenActTravelSerializer)
+    UserCitizenActSerializer, CitizenActTravelSerializer, UserPartnerOfferSerializer)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -47,6 +47,12 @@ class UserCitizenActViewSet(mixins.RetrieveModelMixin,
     serializer_class = UserCitizenActSerializer
     queryset = UserCitizenAct.objects.all()
 
+class UserPartnerOfferViewSet(mixins.RetrieveModelMixin,
+                            mixins.ListModelMixin,
+                            mixins.DestroyModelMixin,
+                            viewsets.GenericViewSet):
+    serializer_class = UserPartnerOfferSerializer
+    queryset = UserPartnerOffer.objects.all()
 
 class EventViewSet(mixins.CreateModelMixin,
                    mixins.UpdateModelMixin,
@@ -182,14 +188,41 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['get'])
     def history(self, request, *args, **kwargs):
-        user_citizen_acts = UserCitizenAct.objects.filter(profile=self.get_object()).order_by('date')
+        user_citizen_acts = UserCitizenAct.objects.filter(profile=self.get_object())
+        user_partner_offer = UserPartnerOffer.objects.filter(profile=self.get_object())
+
+        # Time filtering
+        if 'start' in request.query_params:
+            user_citizen_acts = user_citizen_acts.filter(date__date__gte=datetime.strptime(request.query_params['start'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
+            user_partner_offer = user_partner_offer.filter(date__date__gte=datetime.strptime(request.query_params['start'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
+        if 'end' in request.query_params:
+            user_citizen_acts = user_citizen_acts.filter(date__date__lte=datetime.strptime(request.query_params['end'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
+            user_partner_offer = user_partner_offer.filter(date__date__gte=datetime.strptime(request.query_params['end'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
+
+        user_citizen_acts_serializer = UserCitizenActSerializer(user_citizen_acts, many=True)
+        user_partner_offer_serializer =  UserPartnerOfferSerializer(user_partner_offer, many=True)
+
+
+        for serialized_user_act in user_citizen_acts_serializer.data:
+            try:
+                qrcode_act = CitizenAct.objects.get(id=serialized_user_act['id']).citizenactqrcode
+                serialized_user_act['type']= 'qrcode'
+            except CitizenActQRCode.DoesNotExist:
+                pass
+            try:
+                travel_act = CitizenAct.objects.get(id=serialized_user_act['id']).citizenacttravel
+                serialized_user_act['type'] = 'travel'
+            except CitizenActTravel.DoesNotExist:
+                pass
+
+            user_history = user_citizen_acts_serializer.data + user_partner_offer_serializer.data
+            user_history.sort(key= lambda item:item['date'], reverse=True)
 
         # Returned set limitation
         if 'limit' in request.query_params:
-            user_citizen_acts = user_citizen_acts[:int(request.query_params['limit'])]
+            user_history = user_history[:int(request.query_params['limit'])]
 
-        serializer = UserCitizenActSerializer(user_citizen_acts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(user_history, status=status.HTTP_200_OK)
 
     @detail_route(methods=['get'])
     def travelprogress(self, request, *args, **kwargs):

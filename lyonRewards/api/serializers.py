@@ -104,6 +104,7 @@ class PartnerSerializer(serializers.ModelSerializer):
 
 
 class UserPartnerOfferSerializer(serializers.ModelSerializer):
+    partner_offer = PartnerOfferSerializer()
     class Meta:
         model = UserPartnerOffer
         fields = "__all__"
