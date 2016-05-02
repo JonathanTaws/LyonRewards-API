@@ -62,8 +62,8 @@ class Event(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User)  # One-to-One liaison, no inheritance
-    global_points = models.PositiveIntegerField()
-    current_points = models.PositiveIntegerField()
+    global_points = models.PositiveIntegerField(default=0)
+    current_points = models.PositiveIntegerField(default=0)
     group = models.ForeignKey(Group, blank=True, null=True)
 
     bike_distance = models.PositiveIntegerField(default=0)
