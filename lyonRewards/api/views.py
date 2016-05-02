@@ -260,6 +260,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         else:
             return Response({"Error": "Type from random forest incorrect"}, status=status.HTTP_400_BAD_REQUEST)
 
+        points_granted = 0
+
         for citizen_act in citizen_acts:
             points_granted = number_passed * citizen_act['points']
 
