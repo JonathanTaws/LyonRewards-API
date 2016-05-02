@@ -20,7 +20,7 @@ from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, C
     UserPartnerOffer, UserCitizenAct
 from api.serializers import (
     TagSerializer, EventSerializer, ProfileSerializer, PartnerOfferSerializer, PartnerSerializer,
-    CitizenActSerializer, CitizenActQRCodeSerializer, GroupSerializer)
+    CitizenActSerializer, CitizenActQRCodeSerializer, GroupSerializer, TreasureHuntSerializer)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -30,6 +30,10 @@ class TagViewSet(viewsets.ModelViewSet):
 class GroupViewSet(viewsets.ModelViewSet):
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
+
+class TreasureHuntViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = TreasureHuntSerializer
+    queryset = TreasureHunt.objects.all()
 
 
 class EventViewSet(mixins.CreateModelMixin,
@@ -44,7 +48,7 @@ class EventViewSet(mixins.CreateModelMixin,
         events = None
 
         if 'type' in request.query_params:
-            type = request.query_params.get('type')
+            type = request.query_params['type']
             if type == 'past':
                 events = Event.objects.filter(end_date__lt=datetime.now())
             elif type == 'ongoing':
@@ -60,14 +64,14 @@ class EventViewSet(mixins.CreateModelMixin,
         if 'userId' in request.query_params:
             show_progress = True
             if 'participatedOnly' in request.query_params:
-                if request.query_params.get('participatedOnly') == "true":
+                if request.query_params['participatedOnly'] == "true":
                     events = events.filter(
                         treasurehunt__citizenactqrcode__usercitizenact__profile__id=request.query_params[
                             'userId']).distinct()
 
         # sorting is done after all others operation on events
         if 'sort' in request.query_params:
-            sort_type = request.query_params.get('sort')
+            sort_type = request.query_params['sort']
             if sort_type == 'startDate':
                 events = events.order_by('start_date')
 
@@ -91,9 +95,12 @@ class EventViewSet(mixins.CreateModelMixin,
 
     @detail_route(methods=['post'])
     def hunt(self, request, *args, **kwargs):
-        treasure_hunt = TreasureHunt(event=self.get_object())
-        treasure_hunt.save()
-        return Response(status=status.HTTP_201_CREATED)
+        serializer = TreasureHuntSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @detail_route(methods=['get'])
     def qrcodes(self, request, *args, **kwargs):
@@ -125,7 +132,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         # filtering on existing property
         if 'time' in request.query_params:
-            time=request.query_params.get('time')
+            time=request.query_params['time']
             if time == 'lastTfh':
                 profiles = sorted(Profile.objects.all(), key=lambda m: m.last_tfh_points, reverse=True)
             elif time == 'currentMonth':
@@ -135,7 +142,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         # filtering on parameter
         elif 'month' in request .query_params:
-            month = int(request.query_params.get('month'))
+            month = int(request.query_params['month'])
             if 1 < month > 12:
                 return Response({'error': 'Month should be in range 1-12 (included)'.format(month)}, status=status.HTTP_406_NOT_ACCEPTABLE)
             profiles = sorted(Profile.objects.all(), key=lambda m: m.month_points(month), reverse=True)
@@ -149,7 +156,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         if 'userId' in request.query_params:
             for index, profile in enumerate(profiles):
-                if profile.id == int(request.query_params.get('userId')):
+                if profile.id == int(request.query_params['userId']):
                     return Response(
                         {'ranking' : serializer.data, 'specified_user_rank': index+1},
                         status=status.HTTP_200_OK)
@@ -214,7 +221,7 @@ class CitizenActViewSet(mixins.ListModelMixin,
     def retrieve(self, request, pk=None, *args, **kwargs):
         serializer = None
         if 'type' in request.query_params:
-            type = request.query_params.get('type')
+            type = request.query_params['type']
 
             if type == 'qrcode':
                 try:
@@ -227,8 +234,8 @@ class CitizenActViewSet(mixins.ListModelMixin,
                     try:
                         completion = (
                             UserCitizenAct.objects.get(
-                                citizen_act__id=serializer.data.get('id'),
-                                profile__id=request.query_params.get('userId')))
+                                citizen_act__id=serializer.data['id'],
+                                profile__id=request.query_params['userId']))
                         s_dict['completed'] = True
                         s_dict['date'] = completion.date
                     except ObjectDoesNotExist:
@@ -243,20 +250,32 @@ class CitizenActViewSet(mixins.ListModelMixin,
 
     def create(self, request):
         try:
-            type = request.query_params.get('type')
+            type = request.query_params['type']
         except KeyError:
             return Response({}, status = status.HTTP_406_NOT_ACCEPTABLE)
         if type == 'qrcode':
             serializer = CitizenActQRCodeSerializer(data=request.data)
             if serializer.is_valid():
-                citizenActQRCode = CitizenActQRCode(**serializer.validated_data)
-                citizenActQRCode.save()
-                return Response(serializer.errors, status=status.HTTP_201_CREATED)
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
         return Response({}, status=status.HTTP_428_PRECONDITION_REQUIRED)
 
-    def update(self, request):
-        pass
+    def update(self, request, pk=None):
+        try:
+            type = request.query_params['type']
+            if type == 'qrcode':
+                serializer = CitizenActQRCodeSerializer(self.get_object().citizenactqrcode, data=request.data)
+            else:
+                return Response({}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        except KeyError:
+            serializer = CitizenActSerializer(self.get_object(), data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
 
     @detail_route(methods=['get'])
     def event(self, request, *args, **kwargs):
