@@ -17,6 +17,7 @@ router.register(r'partners', views.PartnerViewSet)
 router.register(r'offers', views.PartnerOfferViewSet)
 router.register(r'acts', views.CitizenActViewSet)
 router.register(r'userActs', views.UserCitizenActViewSet)
+router.register(r'userOffers', views.UserPartnerOfferViewSet)
 router.register(r'groups', views.GroupViewSet)
 
 # The API URLs are now determined automatically by the router.
