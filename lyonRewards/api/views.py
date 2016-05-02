@@ -208,7 +208,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         transports = ["bike", "walk", "tram", "bus"]
 
         from random import randint
-        dico_random_forest = {"type": transports[randint(0, 3)], "distance": 120}
+        dico_random_forest = {"type": "bike", "distance": 120}
 
         citizen_act_travel = CitizenActTravel.objects.get(type=dico_random_forest['type'])
 
@@ -274,6 +274,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             "citizen_acts": citizen_acts
         }
 
+        profile.save()
         return Response(dict_return)
 
 
