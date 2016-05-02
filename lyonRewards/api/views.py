@@ -178,6 +178,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         {'ranking': serializer.data, 'specified_user_rank': index + 1},
                         status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    @detail_route()
+    def history(self, request):
+        pass
 
     @detail_route(methods=['post'])
     def travel(self, request, *args, **kwargs):
