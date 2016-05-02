@@ -188,16 +188,16 @@ class ProfileViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['get'])
     def travelprogress(self, request, *args, **kwargs):
         bike_act = CitizenActTravel.objects.get(type='bike')
-        bike_progress = ((self.get_object().bike_distance%bike_act.distance_step)/bike_act.distance_step) if bike_act.distance_step != 0 else 0
+        bike_progress = ((self.get_object().bike_distance%bike_act.distance_step)/float(bike_act.distance_step)) if bike_act.distance_step != 0 else 0
 
         walk_act =  CitizenActTravel.objects.get(type='walk')
-        walk_progress = ((self.get_object().walk_distance % walk_act.distance_step) / walk_act.distance_step) if walk_act.distance_step != 0 else 0
+        walk_progress = ((self.get_object().walk_distance % walk_act.distance_step) / float(walk_act.distance_step)) if walk_act.distance_step != 0 else 0
 
         tram_act = CitizenActTravel.objects.get(type='tram')
-        tram_progress = ((self.get_object().tram_distance % tram_act.distance_step) / tram_act.distance_step) if tram_act.distance_step != 0 else 0
+        tram_progress = ((self.get_object().tram_distance % tram_act.distance_step) / float(tram_act.distance_step)) if tram_act.distance_step != 0 else 0
 
         bus_act = CitizenActTravel.objects.get(type='bus')
-        bus_progress = ((self.get_object().bus_distance % bus_act.distance_step) / bus_act.distance_step) if bus_act.distance_step != 0 else 0
+        bus_progress = ((self.get_object().bus_distance % bus_act.distance_step) / float(bus_act.distance_step)) if bus_act.distance_step != 0 else 0
 
         dict_return = {
             'bike_progress' : bike_progress,
