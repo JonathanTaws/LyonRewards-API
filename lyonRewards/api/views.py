@@ -14,6 +14,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
+from api.machine_learning.transport_predictor import predict
 
 from api.models import (
     Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt,
@@ -193,27 +194,29 @@ class ProfileViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['get'])
     def travelprogress(self, request, *args, **kwargs):
         bike_act = CitizenActTravel.objects.get(type='bike')
-        bike_progress = ((self.get_object().bike_distance%bike_act.distance_step)/float(bike_act.distance_step)) if bike_act.distance_step != 0 else 0
+        bike_progress = ((self.get_object().bike_distance % bike_act.distance_step) / float(
+            bike_act.distance_step)) if bike_act.distance_step != 0 else 0
 
-        walk_act =  CitizenActTravel.objects.get(type='walk')
-        walk_progress = ((self.get_object().walk_distance % walk_act.distance_step) / float(walk_act.distance_step)) if walk_act.distance_step != 0 else 0
+        walk_act = CitizenActTravel.objects.get(type='walk')
+        walk_progress = ((self.get_object().walk_distance % walk_act.distance_step) / float(
+            walk_act.distance_step)) if walk_act.distance_step != 0 else 0
 
         tram_act = CitizenActTravel.objects.get(type='tram')
-        tram_progress = ((self.get_object().tram_distance % tram_act.distance_step) / float(tram_act.distance_step)) if tram_act.distance_step != 0 else 0
+        tram_progress = ((self.get_object().tram_distance % tram_act.distance_step) / float(
+            tram_act.distance_step)) if tram_act.distance_step != 0 else 0
 
         bus_act = CitizenActTravel.objects.get(type='bus')
-        bus_progress = ((self.get_object().bus_distance % bus_act.distance_step) / float(bus_act.distance_step)) if bus_act.distance_step != 0 else 0
+        bus_progress = ((self.get_object().bus_distance % bus_act.distance_step) / float(
+            bus_act.distance_step)) if bus_act.distance_step != 0 else 0
 
         dict_return = {
-            'bike_progress' : bike_progress,
+            'bike_progress': bike_progress,
             'walk_progress': walk_progress,
             'tram_progress': tram_progress,
             'bus_progress': bus_progress
         }
-        
+
         return Response(dict_return, status=status.HTTP_200_OK)
-
-
 
     @detail_route(methods=['post'])
     def travel(self, request, *args, **kwargs):
@@ -240,8 +243,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         #####give it to random forest######
         transports = ["bike", "walk", "tram", "bus"]
 
-        from random import randint
-        dico_random_forest = {"type": "bike", "distance": 120}
+        dico_random_forest = predict(request.data)
 
         citizen_act_travel = CitizenActTravel.objects.get(type=dico_random_forest['type'])
 
@@ -256,11 +258,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         if dico_random_forest['type'] == "bike":
             # if we passed at least one time the step
-            print(number_passed)
             number_passed = number_times_step_passed(citizen_act_travel.distance_step, dico_random_forest['distance'],
                                                      profile.bike_distance)
-
-            print(number_passed)
 
             if number_passed > 0:
                 create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
@@ -294,6 +293,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
             profile.bike_bus += dico_random_forest['distance']
             newTotalKm = profile.bus_distance
+
+        elif dico_random_forest['type'] == "car":
+            dict_return = {
+                "mode": "car"
+            }
+            return Response(dict_return)
         else:
             return Response({"Error": "Type from random forest incorrect"}, status=status.HTTP_400_BAD_REQUEST)
 
