@@ -63,18 +63,30 @@ class ProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # we define how to update our profile
 
-        user_data = validated_data.pop('user')
+        try:
+            user_data = validated_data.pop('user')
 
+            #take caution, it differs in python 3.x and 2.x !
+            for key,data in user_data.items():
+                if key == "password":
+                    instance.user.set_password(data)
+                else:
+                    setattr(instance.user, key, data)
+        except KeyError:
+            pass
+
+
+        instance.user.save()
+
+        '''
         instance.user.username = user_data['username']
         instance.user.set_password(user_data['password'])
         instance.user.first_name = user_data['first_name']
         instance.user.last_name = user_data['last_name']
         instance.user.email = user_data['email']
         instance.user.save()
+        '''
 
-
-
-        print(validated_data)
         super(ProfileSerializer, self).update(instance, validated_data)
 
         return instance
