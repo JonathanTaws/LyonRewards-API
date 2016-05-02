@@ -148,17 +148,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 profiles = sorted(Profile.objects.all(), key=lambda m: m.current_month_points, reverse=True)
             else:
                 return Response({'error': '{0} is not a acceptable time parameter'.format(time)}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
         # filtering on parameter
         elif 'month' in request .query_params:
             month = int(request.query_params['month'])
             if 1 < month > 12:
                 return Response({'error': 'Month should be in range 1-12 (included)'.format(month)}, status=status.HTTP_406_NOT_ACCEPTABLE)
             profiles = sorted(Profile.objects.all(), key=lambda m: m.month_points(month), reverse=True)
-
         #no filtering
         else:
             profiles=Profile.objects.all().order_by('-global_points')
+
+        #Returned set limitation
+        if 'limit' in request.query_params:
+            profiles=profiles[:int(request.query_params['limit'])]
 
         # serialization
         serializer = ProfileSerializer(profiles, many=True)
