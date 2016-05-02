@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
-from transport_predictor import predict
+from api.transport_predictor import predict
 
 from api.models import (
     Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt,
@@ -309,7 +309,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             if number_passed > 0:
                 create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
 
-            profile.bike_walk += dico_random_forest['distance']
+            profile.walk_distance += dico_random_forest['distance']
             newTotalKm = profile.walk_distance
 
         elif dico_random_forest['type'] == "tram":
@@ -318,7 +318,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             if number_passed > 0:
                 create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
 
-            profile.bike_tram += dico_random_forest['distance']
+            profile.tram_distance += dico_random_forest['distance']
             newTotalKm = profile.tram_distance
 
         elif dico_random_forest['type'] == "bus":
@@ -327,7 +327,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             if number_passed > 0:
                 create_citizen_act_travel(number_passed, citizen_acts, profile, citizen_act_travel)
 
-            profile.bike_bus += dico_random_forest['distance']
+            profile.bus_distance += dico_random_forest['distance']
             newTotalKm = profile.bus_distance
 
         elif dico_random_forest['type'] == "car":
