@@ -117,7 +117,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    #permission_classes = (IsAuthenticatedOrReadOnly,)
 
     @list_route()
     def ranking(self, request):
