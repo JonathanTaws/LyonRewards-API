@@ -66,6 +66,11 @@ class Profile(models.Model):
     current_points = models.PositiveIntegerField()
     group = models.ForeignKey(Group, blank=True, null=True)
 
+    bike_distance = models.PositiveIntegerField(default=0)
+    walk_distance = models.PositiveIntegerField(default=0)
+    tram_distance = models.PositiveIntegerField(default=0)
+    bus_distance = models.PositiveIntegerField(default=0)
+
     def __str__(self):
         return "Profil de {0}".format(self.user.username)
 
@@ -137,6 +142,18 @@ class CitizenActQRCode(CitizenAct):
 
     def __unicode__(self):
         return u"CitizenActQRCode {0}".format(self.title)
+
+
+class CitizenActTravel(CitizenAct):
+    distance_step = models.IntegerField()
+    type = models.CharField(unique=True, max_length=100)
+
+    def __str__(self):
+        return "CitizenActTravel {0}".format(self.title)
+
+    def __unicode__(self):
+        return u"CitizenActTravel  {0}".format(self.title)
+
 
 
 class UserCitizenAct(models.Model):

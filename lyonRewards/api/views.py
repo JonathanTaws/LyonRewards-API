@@ -15,11 +15,14 @@ from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
 
-from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt, \
-    UserPartnerOffer, UserCitizenAct
+
+from api.models import (
+    Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, CitizenActQRCode, TreasureHunt,
+    UserPartnerOffer, UserCitizenAct, CitizenActTravel)
 from api.serializers import (
     TagSerializer, EventSerializer, ProfileSerializer, PartnerOfferSerializer, PartnerSerializer,
-    CitizenActSerializer, CitizenActQRCodeSerializer, GroupSerializer, TreasureHuntSerializer, UserCitizenActSerializer)
+    CitizenActSerializer, CitizenActQRCodeSerializer, GroupSerializer, TreasureHuntSerializer,
+    UserCitizenActSerializer, CitizenActTravelSerializer)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -38,9 +41,9 @@ class TreasureHuntViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UserCitizenActViewSet(mixins.RetrieveModelMixin,
-                            mixins.ListModelMixin,
-                            mixins.DestroyModelMixin,
-                            viewsets.GenericViewSet):
+                    mixins.ListModelMixin,
+                    mixins.DestroyModelMixin,
+                    viewsets.GenericViewSet):
     serializer_class = UserCitizenActSerializer
     queryset = UserCitizenAct.objects.all()
 
@@ -160,7 +163,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         # no filtering
         else:
-            profiles = Profile.objects.all().order_by('-global_points')
+            profiles=Profile.objects.all().order_by('-global_points')
+
+        #Returned set limitation
+        if 'limit' in request.query_params:
+            profiles=profiles[:int(request.query_params['limit'])]
 
         # serialization
         serializer = ProfileSerializer(profiles, many=True)
@@ -186,7 +193,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             Create user citizen
             '''
             for i in range(number_passed):
-                user_citizen_act_travel = UserCitizenActTravel(profile=profile, citizen_act=citizen_act_travel,
+                user_citizen_act_travel = UserCitizenAct(profile=profile, citizen_act=citizen_act_travel,
                                                                date=datetime.now())
                 citizen_acts.append(CitizenActTravelSerializer(user_citizen_act_travel).data)
 
@@ -315,9 +322,12 @@ class CitizenActViewSet(mixins.ListModelMixin,
 
     def retrieve(self, request, pk=None, *args, **kwargs):
         serializer = None
+
+        #type parameter
         if 'type' in request.query_params:
             type = request.query_params['type']
 
+            #type CitizenActQRCode
             if type == 'qrcode':
                 try:
                     serializer = CitizenActQRCodeSerializer(self.get_object().citizenactqrcode)
@@ -325,6 +335,8 @@ class CitizenActViewSet(mixins.ListModelMixin,
                     return Response({'Error': 'The requested CitizenAct is not of the specified type'},
                                     status=status.HTTP_400_BAD_REQUEST)
                 s_dict = dict(serializer.data)
+
+                #add completion if userId specified
                 if 'userId' in request.query_params:
 
                     try:
@@ -338,8 +350,15 @@ class CitizenActViewSet(mixins.ListModelMixin,
                         s_dict['completed'] = False
                 return Response(s_dict, status=status.HTTP_200_OK)
 
+            #CitizenActTravel type
+            if type == 'travel':
+                try:
+                    serializer = CitizenActTravelSerializer(self.get_object().citizenacttravel)
+                except CitizenActTravel.DoesNotExist:
+                    return Response({'Error' : 'The requested CitizenAct is not of the specified type'}, status = status.HTTP_400_BAD_REQUEST)
+                return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                return Response({}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response({'Error' : 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         else:
             return Response(CitizenActSerializer(self.get_object()).data, status=status.HTTP_200_OK)
@@ -348,22 +367,33 @@ class CitizenActViewSet(mixins.ListModelMixin,
         try:
             type = request.query_params['type']
         except KeyError:
-            return Response({}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response({'Error' : 'type specification missing'}, status = status.HTTP_428_PRECONDITION_REQUIRED)
         if type == 'qrcode':
             serializer = CitizenActQRCodeSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        elif type == 'travel':
+            serializer = CitizenActTravelSerializer(data=request.data)
+        else:
+            return Response({'Error' : 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
             return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
-        return Response({}, status=status.HTTP_428_PRECONDITION_REQUIRED)
+
 
     def update(self, request, pk=None):
         try:
             type = request.query_params['type']
-            if type == 'qrcode':
-                serializer = CitizenActQRCodeSerializer(self.get_object().citizenactqrcode, data=request.data)
-            else:
-                return Response({}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            try:
+                if type == 'qrcode':
+                    serializer = CitizenActQRCodeSerializer(self.get_object().citizenactqrcode, data=request.data)
+                elif type == 'travel':
+                    serializer = CitizenActTravelSerializer(self.get_object().citizenacttravel, data=request.data)
+                else:
+                    return Response({'Error' : 'Specified type does not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            except ObjectDoesNotExist:
+                return Response({'Error' : 'The CitizenAct is not of the specified type'}, status = status.HTTP_400_BAD_REQUEST)
         except KeyError:
             serializer = CitizenActSerializer(self.get_object(), data=request.data)
 
