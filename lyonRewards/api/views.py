@@ -20,7 +20,7 @@ from api.models import Tag, Event, Profile, PartnerOffer, Partner, CitizenAct, C
     UserPartnerOffer, UserCitizenAct
 from api.serializers import (
     TagSerializer, EventSerializer, ProfileSerializer, PartnerOfferSerializer, PartnerSerializer,
-    CitizenActSerializer, CitizenActQRCodeSerializer, GroupSerializer, TreasureHuntSerializer)
+    CitizenActSerializer, CitizenActQRCodeSerializer, GroupSerializer, TreasureHuntSerializer, UserCitizenActSerializer )
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -34,6 +34,13 @@ class GroupViewSet(viewsets.ModelViewSet):
 class TreasureHuntViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TreasureHuntSerializer
     queryset = TreasureHunt.objects.all()
+
+class UserCitizenActViewSet(mixins.RetrieveModelMixin,
+                    mixins.ListModelMixin,
+                    mixins.DestroyModelMixin,
+                    viewsets.GenericViewSet):
+    serializer_class = UserCitizenActSerializer
+    queryset = UserCitizenAct.objects.all()
 
 
 class EventViewSet(mixins.CreateModelMixin,

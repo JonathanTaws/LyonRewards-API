@@ -126,3 +126,9 @@ class CitizenActQRCodeSerializer(serializers.ModelSerializer):
         model = CitizenActQRCode
         fields = '__all__'
 
+class UserCitizenActSerializer(serializers.ModelSerializer):
+    profile = serializers.PrimaryKeyRelatedField(queryset=Profile.objects.all())
+    citizen_act = serializers.PrimaryKeyRelatedField(queryset=CitizenAct.objects.all())
+    class Meta:
+        model = UserCitizenAct
+        fields = '__all__'
