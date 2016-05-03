@@ -294,8 +294,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         from random import randint
 
-        #dico_random_forest = predict(request.data)
-        dico_random_forest = {"type": transports[randint(0,3)], "distance":90}
+        dico_random_forest = predict(request.data)
+        #dico_random_forest = {"type": transports[randint(0,3)], "distance":90}
 
         citizen_act_travel = CitizenActTravel.objects.get(type=dico_random_forest['type'])
 
