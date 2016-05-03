@@ -117,6 +117,7 @@ class CitizenActSerializer(serializers.ModelSerializer):
 
 
 class TreasureHuntSerializer(serializers.ModelSerializer):
+    event=serializers.PrimaryKeyRelatedField(queryset=Event.objects.all())
     class Meta:
         model = TreasureHunt
         fields = '__all__'
