@@ -268,9 +268,26 @@ class ProfileViewSet(viewsets.ModelViewSet):
             .filter(citizen_act__citizenacttravel__type='bike')
             .extra({'day': "date(date)"})
             .values('day')
-            .annotate(cou=Count('profile', distinct=True)))
-        print(bike)
-        return Response({'bike' : bike},  status=status.HTTP_200_OK)
+            .annotate(user_bike_count=Count('profile', distinct=True)))
+        walk = (
+            UserCitizenAct.objects
+            .filter(citizen_act__citizenacttravel__type='walk')
+            .extra({'day': "date(date)"})
+            .values('day')
+            .annotate(user_walk_count=Count('profile', distinct=True)))
+        tram = (
+            UserCitizenAct.objects
+            .filter(citizen_act__citizenacttravel__type='tram')
+            .extra({'day': "date(date)"})
+            .values('day')
+            .annotate(user_tram_count=Count('profile', distinct=True)))
+        bus = (
+            UserCitizenAct.objects
+            .filter(citizen_act__citizenacttravel__type='bus')
+            .extra({'day': "date(date)"})
+            .values('day')
+            .annotate(user_bus_count=Count('profile', distinct=True)))
+        return Response({'bike' : bike, 'walk' : walk, 'tram' : tram, 'bus':bus},  status=status.HTTP_200_OK)
 
     @detail_route(methods=['get'])
     def travelprogress(self, request, *args, **kwargs):
