@@ -91,15 +91,15 @@ class ProfileSerializer(serializers.ModelSerializer):
         return profile
 
 
-class PartnerOfferSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PartnerOffer
-        fields = '__all__'
-
-
 class PartnerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Partner
+        fields = '__all__'
+
+
+class PartnerOfferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PartnerOffer
         fields = '__all__'
 
 

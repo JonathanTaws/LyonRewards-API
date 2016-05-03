@@ -30,10 +30,10 @@ class Partner(models.Model):
     image_url = models.CharField(max_length=400)
 
     def __str__(self):
-        return "{0}".format(self.name)
+        return "Partner {0}".format(self.name)
 
     def __unicode__(self):
-        return u"{0}".format(self.name)
+        return u"Partner {0}".format(self.name)
 
 
 class Event(models.Model):

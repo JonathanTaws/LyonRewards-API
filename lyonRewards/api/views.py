@@ -222,6 +222,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
             except ObjectDoesNotExist:
                 pass
 
+        for serialized_user_act in user_partner_offer_serializer.data:
+            serialized_user_act['partner_offer']['partner']= (
+                PartnerSerializer(Partner.objects.get(id=int(serialized_user_act['partner_offer']['partner']))).data)
+
+
         user_history = user_citizen_acts_serializer.data + user_partner_offer_serializer.data
 
         # Returned set limitation
