@@ -186,43 +186,59 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @detail_route(methods=['get'])
-    def history(self, request, *args, **kwargs):
-        user_citizen_acts = UserCitizenAct.objects.filter(profile=self.get_object())
-        user_partner_offer = UserPartnerOffer.objects.filter(profile=self.get_object())
+    def calculate_history(self, request, profile=None):
+        user_citizen_acts = UserCitizenAct.objects.all()
+        user_partner_offer = UserPartnerOffer.objects.all()
+
+        if profile is not None:
+            user_citizen_acts = user_citizen_acts.filter(profile=profile)
+            user_partner_offer = user_partner_offer.filter(profile=profile)
 
         # Time filtering
         if 'start' in request.query_params:
-            user_citizen_acts = user_citizen_acts.filter(date__date__gte=datetime.strptime(request.query_params['start'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
-            user_partner_offer = user_partner_offer.filter(date__date__gte=datetime.strptime(request.query_params['start'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
+            user_citizen_acts = user_citizen_acts.filter(
+                date__date__gte=datetime.strptime(request.query_params['start'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
+            user_partner_offer = user_partner_offer.filter(
+                date__date__gte=datetime.strptime(request.query_params['start'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
         if 'end' in request.query_params:
-            user_citizen_acts = user_citizen_acts.filter(date__date__lte=datetime.strptime(request.query_params['end'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
-            user_partner_offer = user_partner_offer.filter(date__date__gte=datetime.strptime(request.query_params['end'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
+            user_citizen_acts = user_citizen_acts.filter(
+                date__date__lte=datetime.strptime(request.query_params['end'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
+            user_partner_offer = user_partner_offer.filter(
+                date__date__gte=datetime.strptime(request.query_params['end'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
 
         user_citizen_acts_serializer = UserCitizenActSerializer(user_citizen_acts, many=True)
-        user_partner_offer_serializer =  UserPartnerOfferSerializer(user_partner_offer, many=True)
-
+        user_partner_offer_serializer = UserPartnerOfferSerializer(user_partner_offer, many=True)
 
         for serialized_user_act in user_citizen_acts_serializer.data:
             try:
                 qrcode_act = CitizenAct.objects.get(id=serialized_user_act['id']).citizenactqrcode
-                serialized_user_act['type']= 'qrcode'
-            except CitizenActQRCode.DoesNotExist:
+                serialized_user_act['citizen_act']['type'] = 'qrcode'
+                serialized_user_act['citizen_act']['event'] = EventSerializer(qrcode_act.treasure_hunt.event).data
+            except ObjectDoesNotExist:
                 pass
             try:
                 travel_act = CitizenAct.objects.get(id=serialized_user_act['id']).citizenacttravel
                 serialized_user_act['type'] = 'travel'
-            except CitizenActTravel.DoesNotExist:
+            except ObjectDoesNotExist:
                 pass
 
-            user_history = user_citizen_acts_serializer.data + user_partner_offer_serializer.data
-            user_history.sort(key= lambda item:item['date'], reverse=True)
+        user_history = user_citizen_acts_serializer.data + user_partner_offer_serializer.data
 
         # Returned set limitation
         if 'limit' in request.query_params:
             user_history = user_history[:int(request.query_params['limit'])]
 
-        return Response(user_history, status=status.HTTP_200_OK)
+        user_history.sort(key=lambda item: item['date'], reverse=True)
+
+        return user_history
+
+    @detail_route(methods=['get'])
+    def history(self, request, *args, **kwargs):
+        return Response(self.calculate_history(request, profile=self.get_object()), status=status.HTTP_200_OK)
+
+    @list_route()
+    def globalhistory(self, request, *args, **kwargs):
+        return Response(self.calculate_history(request), status=status.HTTP_200_OK)
 
     @detail_route(methods=['get'])
     def travelprogress(self, request, *args, **kwargs):
