@@ -297,10 +297,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
         dico_random_forest = predict(request.data)
         #dico_random_forest = {"type": transports[randint(0,3)], "distance":90}
 
-        try:
-            citizen_act_travel = CitizenActTravel.objects.get(type=dico_random_forest['type'])
-        except:
-            return Response({"Error": "Please create in database the act travel"}, status=status.HTTP_400_BAD_REQUEST)
+        #we check if object Travel are created
+        if dico_random_forest['type'] != "car":
+            try:
+                citizen_act_travel = CitizenActTravel.objects.get(type=dico_random_forest['type'])
+            except:
+                return Response({"Error": "Please create in database the act travel"}, status=status.HTTP_400_BAD_REQUEST)
 
 
         # we create the citizen acts if needed
