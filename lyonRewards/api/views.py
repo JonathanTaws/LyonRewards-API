@@ -211,14 +211,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         for serialized_user_act in user_citizen_acts_serializer.data:
             try:
-                qrcode_act = CitizenAct.objects.get(id=serialized_user_act['id']).citizenactqrcode
+                qrcode_act = CitizenAct.objects.get(id=serialized_user_act['citizen_act']['id']).citizenactqrcode
                 serialized_user_act['citizen_act']['type'] = 'qrcode'
                 serialized_user_act['citizen_act']['event'] = EventSerializer(qrcode_act.treasure_hunt.event).data
             except ObjectDoesNotExist:
                 pass
             try:
-                travel_act = CitizenAct.objects.get(id=serialized_user_act['id']).citizenacttravel
-                serialized_user_act['type'] = 'travel'
+                travel_act = CitizenAct.objects.get(id=serialized_user_act['citizen_act']['id']).citizenacttravel
+                serialized_user_act['citizen_act']['type'] = 'travel'
             except ObjectDoesNotExist:
                 pass
 
@@ -294,8 +294,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         from random import randint
 
-        dico_random_forest = predict(request.data)
+        #dico_random_forest = predict(request.data)
         #dico_random_forest = {"type": transports[randint(0,3)], "distance":90}
+        dico_random_forest = {"type": 'bike', "distance": 90}
 
         citizen_act_travel = CitizenActTravel.objects.get(type=dico_random_forest['type'])
 
