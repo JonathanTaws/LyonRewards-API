@@ -226,8 +226,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serialized_user_act['partner_offer']['partner']= (
                 PartnerSerializer(Partner.objects.get(id=int(serialized_user_act['partner_offer']['partner']))).data)
 
-
-        user_history = user_citizen_acts_serializer.data + user_partner_offer_serializer.data
+        user_history=[]
+        if 'transaction' in request.query_params:
+            transaction = request.query_params['transaction']
+            if transaction == 'acts':
+                user_history = user_history + user_citizen_acts_serializer.data
+            elif transaction == 'offers':
+                user_history  = user_history + user_partner_offer_serializer.data
+            else:
+                return {'data' : 'Invalid transaction type', 'status' : status.HTTP_406_NOT_ACCEPTABLE}
+        else:
+            user_history = user_citizen_acts_serializer.data + user_partner_offer_serializer.data
 
         # Returned set limitation
         if 'limit' in request.query_params:
@@ -235,15 +244,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         user_history.sort(key=lambda item: item['date'], reverse=True)
 
-        return user_history
+        return {'data' : user_history, 'status' : status.HTTP_200_OK}
 
     @detail_route(methods=['get'])
     def history(self, request, *args, **kwargs):
-        return Response(self.calculate_history(request, profile=self.get_object()), status=status.HTTP_200_OK)
+        history = self.calculate_history(request, profile=self.get_object())
+        return Response(history['data'], status=history['status'])
 
     @list_route()
     def globalhistory(self, request, *args, **kwargs):
-        return Response(self.calculate_history(request), status=status.HTTP_200_OK)
+        history = self.calculate_history(request)
+        return Response(history['data'], status=history['status'])
 
     @detail_route(methods=['get'])
     def travelprogress(self, request, *args, **kwargs):
