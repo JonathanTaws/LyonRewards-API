@@ -242,7 +242,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if 'limit' in request.query_params:
             user_history = user_history[:int(request.query_params['limit'])]
 
-        user_history.sort(key=lambda item: item['date'], reverse=True)
+        if 'order' in request.query_params:
+            if request.query_params['order'] == 'newest':
+                user_history.sort(key=lambda item: item['date'], reverse=True)
+            else:
+                user_history.sort(key=lambda item: item['date'])
 
         return {'data' : user_history, 'status' : status.HTTP_200_OK}
 
