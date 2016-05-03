@@ -188,28 +188,32 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def calculate_history(self, request, profile=None):
-        user_citizen_acts = UserCitizenAct.objects.all()
-        user_partner_offer = UserPartnerOffer.objects.all()
+        user_citizen_acts = UserCitizenAct.objects.all().order_by('date')
+        user_partner_offers = UserPartnerOffer.objects.all().order_by('date')
 
         if profile is not None:
-            user_citizen_acts = user_citizen_acts.filter(profile=profile)
-            user_partner_offer = user_partner_offer.filter(profile=profile)
+            user_citizen_acts = user_citizen_acts.filter(profile=profile).order_by('date')
+            user_partner_offers = user_partner_offers.filter(profile=profile).order_by('date')
+
+
 
         # Time filtering
         if 'start' in request.query_params:
             user_citizen_acts = user_citizen_acts.filter(
                 date__date__gte=datetime.strptime(request.query_params['start'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
-            user_partner_offer = user_partner_offer.filter(
+            user_partner_offers = user_partner_offers.filter(
                 date__date__gte=datetime.strptime(request.query_params['start'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
         if 'end' in request.query_params:
             user_citizen_acts = user_citizen_acts.filter(
                 date__date__lte=datetime.strptime(request.query_params['end'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
-            user_partner_offer = user_partner_offer.filter(
+            user_partner_offers = user_partner_offers.filter(
                 date__date__gte=datetime.strptime(request.query_params['end'], '%Y-%m-%dT%H:%M:%S.%fZ').date())
 
-        user_citizen_acts_serializer = UserCitizenActSerializer(user_citizen_acts, many=True)
-        user_partner_offer_serializer = UserPartnerOfferSerializer(user_partner_offer, many=True)
 
+        user_citizen_acts_serializer = UserCitizenActSerializer(user_citizen_acts, many=True)
+        user_partner_offers_serializer = UserPartnerOfferSerializer(user_partner_offers, many=True)
+
+        #add information
         for serialized_user_act in user_citizen_acts_serializer.data:
             try:
                 qrcode_act = CitizenAct.objects.get(id=serialized_user_act['citizen_act']['id']).citizenactqrcode
@@ -223,33 +227,54 @@ class ProfileViewSet(viewsets.ModelViewSet):
             except ObjectDoesNotExist:
                 pass
 
-        for serialized_user_act in user_partner_offer_serializer.data:
-            serialized_user_act['partner_offer']['partner']= (
+        for serialized_user_act in user_partner_offers_serializer.data:
+            serialized_user_act['partner_offer']['partner'] = (
                 PartnerSerializer(Partner.objects.get(id=int(serialized_user_act['partner_offer']['partner']))).data)
 
-        user_history=[]
+        history = []
+
+        #particular transaction type filter
         if 'transaction' in request.query_params:
             transaction = request.query_params['transaction']
             if transaction == 'acts':
-                user_history = user_history + user_citizen_acts_serializer.data
+                history = history + user_citizen_acts_serializer.data
             elif transaction == 'offers':
-                user_history  = user_history + user_partner_offer_serializer.data
+                history = history + user_partner_offers_serializer.data
             else:
-                return {'data' : 'Invalid transaction type', 'status' : status.HTTP_406_NOT_ACCEPTABLE}
+                return {'data': 'Invalid transaction type', 'status': status.HTTP_406_NOT_ACCEPTABLE}
+
+        #order construction using the two list
         else:
-            user_history = user_citizen_acts_serializer.data + user_partner_offer_serializer.data
+            acts_index = 0
+            offers_index = 0
+            s_user_citizen_acts = user_citizen_acts_serializer.data
+            s_user_partner_offers = user_partner_offers_serializer.data
+            while(acts_index < len(s_user_citizen_acts)-1 and offers_index < len(s_user_partner_offers) -1):
+                if (datetime.strptime(s_user_citizen_acts[acts_index]['date'], '%Y-%m-%dT%H:%M:%S.%fZ') <
+                        datetime.strptime(s_user_partner_offers[offers_index]['date'], '%Y-%m-%dT%H:%M:%S.%fZ')):
+                    history.append(s_user_citizen_acts[acts_index])
+                    acts_index +=1
+                else:
+                    history.append(s_user_partner_offers[offers_index])
+                    offers_index +=1
+
+            if(acts_index < len(s_user_citizen_acts)-1):
+                history = history + s_user_citizen_acts[acts_index:]
+            else:
+                history = history + s_user_partner_offers[offers_index:]
 
         # Returned set limitation
         if 'limit' in request.query_params:
-            user_history = user_history[:int(request.query_params['limit'])]
+            history = history[:int(request.query_params['limit'])]
 
+        #reverse order if needs to be sorted by newest first
         if 'order' in request.query_params:
-            if request.query_params['order'] == 'newest':
-                user_history.sort(key=lambda item: datetime.strptime(item['date'],'%Y-%m-%dT%H:%M:%S.%fZ') , reverse=True)
-        else:
-            user_history.sort(key=lambda item: datetime.strptime(item['date'],'%Y-%m-%dT%H:%M:%S.%fZ'))
+            order=request.query_params['order']
+            if order == 'newest':
+                history.reverse()
 
-        return {'data' : user_history, 'status' : status.HTTP_200_OK}
+
+        return {'data' : history, 'status' : status.HTTP_200_OK}
 
     @detail_route(methods=['get'])
     def history(self, request, *args, **kwargs):
