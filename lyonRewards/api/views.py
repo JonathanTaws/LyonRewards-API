@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 
 from django.contrib.auth.models import User, Group
+from django.db.models import F, Count
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, mixins
@@ -259,6 +260,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def globalhistory(self, request, *args, **kwargs):
         history = self.calculate_history(request)
         return Response(history['data'], status=history['status'])
+
+    @list_route()
+    def globaltravel(self, request,  *args, **kwargs):
+        bike = (
+            UserCitizenAct.objects
+            .filter(citizen_act__citizenacttravel__type='bike')
+            .values('date')
+            .distinct('profile')
+            .annotate(cou=Count('profile')))
+        print(bike)
+        return Response({'bike' : bike},  status=status.HTTP_200_OK)
 
     @detail_route(methods=['get'])
     def travelprogress(self, request, *args, **kwargs):
