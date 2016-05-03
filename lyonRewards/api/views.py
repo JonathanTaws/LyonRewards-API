@@ -266,9 +266,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
         bike = (
             UserCitizenAct.objects
             .filter(citizen_act__citizenacttravel__type='bike')
-            .values('date')
-            .distinct('profile')
-            .annotate(cou=Count('profile')))
+            .extra({'day': "date(date)"})
+            .values('day')
+            .annotate(cou=Count('profile', distinct=True)))
         print(bike)
         return Response({'bike' : bike},  status=status.HTTP_200_OK)
 
