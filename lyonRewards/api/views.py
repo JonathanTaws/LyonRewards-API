@@ -245,8 +245,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if 'order' in request.query_params:
             if request.query_params['order'] == 'newest':
                 user_history.sort(key=lambda item: datetime.strptime(item['date'],'%Y-%m-%dT%H:%M:%S.%fZ') , reverse=True)
-            else:
-                user_history.sort(key=lambda item: datetime.strptime(item['date'],'%Y-%m-%dT%H:%M:%S.%fZ'))
+        else:
+            user_history.sort(key=lambda item: datetime.strptime(item['date'],'%Y-%m-%dT%H:%M:%S.%fZ'))
 
         return {'data' : user_history, 'status' : status.HTTP_200_OK}
 
